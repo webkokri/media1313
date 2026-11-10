@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowIcon, Equalizer, LiveBadge, Placeholder, PlayIcon, SectionHead, Segmented, VideoCard, VideoIcon } from '../components/ui.jsx';
+import { ArrowIcon, Equalizer, LiveBadge, PauseIcon, Placeholder, PlayIcon, SectionHead, Segmented, VideoCard, VideoIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
+import { useRadio } from '../radio.jsx';
 import { Loaded, articleMeta, articleTo, clock, timeAgo, useApi, useNewsletter } from '../api.jsx';
 
 function OnNowPanel() {
   const { FM, NOW_ON_RADIO, RADIO_UP_NEXT, TV_UP_NEXT } = useContent();
   const [tab, setTab] = useState('tv');
+  const radio = useRadio();
   return (
     <div data-edit="TV_UP_NEXT" className="box box--panel stack" style={{ flex: '1 1 340px', minWidth: 0, gap: 16, padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -28,12 +30,12 @@ function OnNowPanel() {
       ) : (
         <div className="stack" style={{ gap: 16 }}>
           <div style={{ background: 'var(--night)', borderRadius: 10, padding: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-            <Link to="/radio" aria-label="Play 1313 Radio" className="play-circle" style={{ width: 52, height: 52, background: 'var(--amber)' }}><PlayIcon size={22} color="#111216" /></Link>
+            <button type="button" onClick={radio.toggle} aria-label={radio.playing || radio.loading ? 'Pause 1313 Radio' : 'Play 1313 Radio'} className="play-circle" style={{ width: 52, height: 52, background: 'var(--amber)' }}>{radio.playing || radio.loading ? <PauseIcon size={22} color="#111216" /> : <PlayIcon size={22} color="#111216" />}</button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p className="kicker kicker--amber">1313 RADIO · {FM}</p>
               <p style={{ fontWeight: 600, fontSize: 16, marginTop: 2 }}>{NOW_ON_RADIO.title}</p>
             </div>
-            <Equalizer />
+            {radio.playing ? <Equalizer /> : null}
           </div>
           <div className="stack">
             {RADIO_UP_NEXT.map((r) => (
@@ -58,6 +60,7 @@ export default function Home() {
 
 function HomeBody({ feed }) {
   const { FM, NOW_ON_RADIO, NOW_ON_TV, PLAYER, PODCASTS, SITE, VIDEOS } = useContent();
+  const radioMain = useRadio();
   const { lead, secondary, latest, sections } = feed;
   const nl = useNewsletter('home');
   return (
@@ -154,7 +157,7 @@ function HomeBody({ feed }) {
               <h3 className="headline" style={{ fontSize: 40, lineHeight: 1 }}>{NOW_ON_RADIO.title}</h3>
               <p className="muted-dark" style={{ fontSize: 15, lineHeight: 1.5 }}>News, traffic and music for the ride home. Stream it here or tune in on {FM}.</p>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Link to="/live" className="btn btn--amber"><PlayIcon />Listen live</Link>
+                <button type="button" onClick={radioMain.toggle} className="btn btn--amber">{radioMain.playing || radioMain.loading ? <PauseIcon size={16} /> : <PlayIcon />}{radioMain.playing || radioMain.loading ? 'Pause radio' : 'Listen live'}</button>
                 <Link to="/schedule" style={{ color: '#fff', fontWeight: 600, fontSize: 14, padding: '12px 4px' }}>Radio schedule</Link>
               </div>
             </div>

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { ContentProvider } from './content.jsx';
+import { RadioProvider } from './radio.jsx';
 import './styles.css';
 
 // The admin ("Studio") is a separate bundle that visitors never download.
@@ -16,7 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Suspense fallback={null}><AdminApp /></Suspense>
       ) : (
         <ContentProvider>
-          <App />
+          <RadioProvider>
+            <App />
+          </RadioProvider>
         </ContentProvider>
       )}
     </BrowserRouter>

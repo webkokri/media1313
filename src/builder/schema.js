@@ -82,6 +82,7 @@ export const WIDGETS = {
   // ---- live data ----
   ticker: { label: 'Breaking ticker', icon: '⚡', cat: 'Live data', defaults: {}, content: [C.text('label', 'Label (default: BREAKING)')], style: [], note: 'Shows the headline set under Site content → Banner.' },
   player: { label: 'Live TV player', icon: '📡', cat: 'Live data', defaults: { aspect: '16/9' }, content: [C.text('url', 'Stream link (leave empty to use the site’s Live TV player)'), C.image('poster', 'Poster image')], style: [C.select('aspect', 'Aspect ratio', opts(['16/9', '16:9'], ['21/9', '21:9'], ['4/3', '4:3'])), C.range('vidRadius', 'Corner radius', 0, 60, { unit: 'px' })], note: 'The HLS link is set under Site content → Live TV player.' },
+  radio: { label: 'Radio player', icon: '📻', cat: 'Live data', defaults: { title: '1313 Radio', style: 'card' }, content: [C.text('title', 'Title'), C.select('style', 'Style', opts(['card', 'Card'], ['button', 'Play button only']))], style: [C.align()], note: 'Plays the live stream link set under Site content → Banner & radio stream.' },
   onair: { label: 'On air now', icon: '◉', cat: 'Live data', defaults: { channel: 'tv' }, content: [C.select('channel', 'Channel', opts(['tv', 'TV'], ['radio', 'Radio']))], style: [] },
   schedule: { label: 'Schedule', icon: '🗓', cat: 'Live data', defaults: { channel: 'tv', day: 'weekday', rows: 6 }, content: [C.select('channel', 'Channel', opts(['tv', 'TV'], ['radio', 'Radio'])), C.select('day', 'Days', opts(['weekday', 'Weekdays'], ['weekend', 'Weekends'])), C.range('rows', 'Rows to show', 1, 20)], style: [] },
   articles: { label: 'News articles', icon: '📰', cat: 'Live data', defaults: { heading: 'Latest news', category: 'All', count: 6, columns: 3, layout: 'grid', showImage: true, showExcerpt: false, showMeta: true, linkText: 'All news' },
@@ -203,7 +204,7 @@ export const BUILTIN_PAGES = {
 
 /** Site-content blocks that feed a widget (editable right inside the builder under "Data for this widget"). */
 export const WIDGET_DATA = {
-  ticker: ['SITE'], player: ['PLAYER'], schedule: ['SCHEDULE'], shows: ['SHOWS'], podcasts: ['PODCASTS'], videos: ['VIDEOS'],
+  ticker: ['SITE'], radio: ['SITE', 'NOW_ON_RADIO'], player: ['PLAYER'], schedule: ['SCHEDULE'], shows: ['SHOWS'], podcasts: ['PODCASTS'], videos: ['VIDEOS'],
   onair: (s) => (s.channel === 'radio' ? ['NOW_ON_RADIO', 'RADIO_UP_NEXT'] : ['NOW_ON_TV', 'TV_UP_NEXT']),
   contact: ['CONTACT_TOPICS'],
 };

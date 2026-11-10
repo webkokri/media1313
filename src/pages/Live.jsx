@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowIcon, CaptionsIcon, Equalizer, FullscreenIcon, LiveBadge, PauseIcon, PlayIcon, PlusIcon, RadioIcon, Segmented, ShareIcon, TvIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
+import { useRadio } from '../radio.jsx';
 
 function TVPlayer() {
   const { NOW_ON_TV, PLAYER } = useContent();
@@ -29,8 +30,7 @@ function TVPlayer() {
 
 function RadioPlayer() {
   const { FM, NOW_ON_RADIO } = useContent();
-  const [playing, setPlaying] = useState(false);
-  const [volume, setVolume] = useState(70);
+  const radio = useRadio(); const playing = radio.playing || radio.loading;
   return (
     <div className="box box--panel" style={{ padding: 32, display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'center', borderRadius: 14 }}>
       <div style={{ width: 240, height: 240, flex: 'none', background: 'var(--amber)', borderRadius: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 20, color: 'var(--ink)' }}>
@@ -42,13 +42,13 @@ function RadioPlayer() {
         <h2 className="headline" style={{ fontSize: 48, lineHeight: 1 }}>{NOW_ON_RADIO.title}</h2>
         <p className="muted-dark" style={{ fontSize: 16, lineHeight: 1.55 }}>With [Host name] — news on the hour, traffic every 15 minutes and music for the ride home.</p>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Wire this to an <audio> element pointing at your stream URL */}
-          <button type="button" aria-label={playing ? 'Pause 1313 Radio' : 'Play 1313 Radio'} className="play-circle" style={{ width: 72, height: 72, background: 'var(--amber)' }} onClick={() => setPlaying(!playing)}>
+          <button type="button" aria-label={playing ? 'Pause 1313 Radio' : 'Play 1313 Radio'} className="play-circle" style={{ width: 72, height: 72, background: 'var(--amber)' }} onClick={radio.toggle}>
             {playing ? <PauseIcon size={26} color="#111216" /> : <PlayIcon size={28} color="#111216" />}
           </button>
-          {playing && <Equalizer height={36} bars={5} />}
+          {radio.playing && <Equalizer height={36} bars={5} />}
+          {radio.status === 'error' && <span role="alert" style={{ fontSize: 13, color: '#FF6B70' }}>{radio.error}</span>}
           <label htmlFor="vol" style={{ fontSize: 13, color: 'var(--muted-dark)', marginLeft: 'auto' }}>Volume</label>
-          <input id="vol" type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(+e.target.value)} style={{ width: 140, accentColor: 'var(--amber)' }} />
+          <input id="vol" type="range" min="0" max="100" value={radio.volume} onChange={(e) => radio.setVolume(+e.target.value)} style={{ width: 140, accentColor: 'var(--amber)' }} />
         </div>
       </div>
       <div style={{ flex: '1 1 100%', borderTop: '1px solid var(--line-dark)', paddingTop: 20 }}>

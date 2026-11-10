@@ -3,20 +3,15 @@ import { Link } from 'react-router-dom';
 import { Equalizer, MonitorIcon, PauseIcon, PhoneIcon, PlayIcon, RadioIcon, SectionHead, SpeakerIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
 import { api } from '../api.jsx';
+import { useRadio } from '../radio.jsx';
 
 export default function Radio() {
   const { FM, NOW_ON_RADIO, RADIO_HOSTS, SITE } = useContent();
-  const [playing, setPlaying] = useState(false);
+  const radio = useRadio();
+  const playing = radio.playing || radio.loading;
   const [request, setRequest] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
-  const STREAM_URL = SITE.radioStreamUrl; // set in the backend content block "SITE"
-
-  const toggle = () => {
-    const el = document.getElementById('radio-stream');
-    if (el && STREAM_URL) { playing ? el.pause() : el.play(); }
-    setPlaying(!playing);
-  };
 
   const sendRequest = async (e) => {
     e.preventDefault();
@@ -27,7 +22,6 @@ export default function Radio() {
 
   return (
     <main>
-      {STREAM_URL && <audio id="radio-stream" src={STREAM_URL} preload="none" />}
       <section data-edit="NOW_ON_RADIO" aria-label="1313 Radio live" style={{ background: 'var(--amber)' }}>
         <div className="container row" style={{ paddingTop: 56, paddingBottom: 56, gap: 40, alignItems: 'center' }}>
           <div className="stack" style={{ flex: '2 1 520px', gap: 16 }}>
@@ -35,14 +29,15 @@ export default function Radio() {
             <h1 className="display" style={{ fontSize: 'clamp(56px, 8vw, 88px)', lineHeight: 0.9 }}>{NOW_ON_RADIO.title}</h1>
             <p style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 560 }}>With [Host name] until 7:00 PM — news on the hour, traffic every 15 minutes and music for the ride home.</p>
             <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-              <button type="button" aria-label={playing ? 'Pause 1313 Radio' : 'Play 1313 Radio'} onClick={toggle} className="play-circle" style={{ width: 84, height: 84, background: 'var(--ink)' }}>
+              <button type="button" aria-label={playing ? 'Pause 1313 Radio' : 'Play 1313 Radio'} onClick={radio.toggle} className="play-circle" style={{ width: 84, height: 84, background: 'var(--ink)' }}>
                 {playing ? <PauseIcon size={28} color="#F2A900" /> : <PlayIcon size={30} color="#F2A900" />}
               </button>
               <div className="stack" style={{ gap: 2 }}>
-                <span style={{ fontWeight: 700, fontSize: 16 }}>{playing ? 'Listening live' : 'Tap to listen live'}</span>
-                <span style={{ fontSize: 14 }}>Now playing: [Track title] — [Artist]</span>
+                <span style={{ fontWeight: 700, fontSize: 16 }}>{radio.loading ? 'Connecting…' : radio.playing ? 'Listening live' : 'Tap to listen live'}</span>
+                <span style={{ fontSize: 14 }}>{radio.status === 'error' ? radio.error : radio.hasStream ? NOW_ON_RADIO.title : 'The live stream will be available soon.'}</span>
               </div>
-              {playing && <Equalizer height={40} color="var(--ink)" />}
+              {radio.playing && <Equalizer height={40} color="var(--ink)" />}
+              <label className="radio-vol" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>Volume<input type="range" min="0" max="100" value={radio.volume} onChange={(e) => radio.setVolume(+e.target.value)} style={{ width: 120, accentColor: 'var(--ink)' }} /></label>
             </div>
           </div>
           <div className="box box--ink" style={{ flex: '1 1 300px', padding: 22 }}>

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useContent } from '../content.jsx';
 import { api, articleMeta, articleTo, useApi, useNewsletter } from '../api.jsx';
-import { PlayIcon, VideoCard } from '../components/ui.jsx';
+import { Equalizer, PauseIcon, PlayIcon, VideoCard } from '../components/ui.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { cleanCustomHtml, cleanHtml } from './sanitize.js';
+import { useRadio } from '../radio.jsx';
 
 const A = ({ href, children, ...p }) => (/^(https?:|mailto:|tel:)/.test(href || '') ? <a href={href} {...p}>{children}</a> : <Link to={href || '/'} {...p}>{children}</Link>);
 const Hint = ({ children }) => <div className="pb-hint">{children}</div>;
@@ -107,6 +108,19 @@ function Newsletter({ s }) {
   );
 }
 
+function RadioWidget({ s }) {
+  const r = useRadio(); const c = useContent(); const on = r.playing || r.loading;
+  const btn = <button type="button" onClick={r.toggle} className="play-circle" style={{ width: 64, height: 64, background: 'var(--amber)' }} aria-label={on ? 'Pause radio' : 'Play radio'}>{on ? <PauseIcon size={24} color="#111216" /> : <PlayIcon size={26} color="#111216" />}</button>;
+  if (s.style === 'button') return <div className="pb-in">{btn}</div>;
+  return (
+    <div className="pb-in box box--panel" style={{ display: 'flex', gap: 16, alignItems: 'center', padding: 20, color: '#fff' }}>
+      {btn}
+      <div style={{ flex: 1, minWidth: 0 }}><p className="kicker kicker--amber">{s.title || '1313 RADIO'} · {c.FM}</p><p style={{ fontWeight: 600, fontSize: 16 }}>{r.status === 'error' ? r.error : r.loading ? 'Connecting…' : r.hasStream ? c.NOW_ON_RADIO?.title : 'The live stream will be available soon.'}</p></div>
+      {r.playing && <Equalizer />}
+    </div>
+  );
+}
+
 function OnAir({ s }) {
   const c = useContent(); const tv = s.channel !== 'radio';
   const now = tv ? c.NOW_ON_TV : c.NOW_ON_RADIO; const next = (tv ? c.TV_UP_NEXT : c.RADIO_UP_NEXT) || [];
@@ -173,6 +187,7 @@ export function WidgetBody({ node, editor }) {
     case 'testimonial': return <figure className="pb-in pb-tm">{s.image && <img className="pb-tm-img" src={s.image} alt="" />}<blockquote className="pb-tm-quote" data-pb-edit="quote">{s.quote}</blockquote><figcaption><strong data-pb-edit="name">{s.name}</strong><span> {s.role}</span></figcaption></figure>;
     case 'html': return <div className="pb-in" dangerouslySetInnerHTML={{ __html: cleanCustomHtml(s.code) }} />;
     case 'ticker': return <div className="pb-in ticker"><div className="container"><strong>{s.label || 'BREAKING'}</strong><p>{c.SITE?.breaking}</p></div></div>;
+    case 'radio': return <RadioWidget s={s} />;
     case 'onair': return <OnAir s={s} />;
     case 'schedule': return <Schedule s={s} />;
     case 'articles': return <Articles s={s} editor={editor} />;
