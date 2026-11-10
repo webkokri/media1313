@@ -355,3 +355,6 @@ html.pb-canvas, html.pb-canvas body { background: #fff; }
 .radiobar-vol { width: 110px; accent-color: var(--amber); } .radiobar-x { flex: none; width: 40px; height: 40px; border: 0; border-radius: 8px; background: transparent; color: var(--soft-dark); font-size: 16px; cursor: pointer; } .radiobar-x:hover { color: #fff; }
 html.has-radiobar body { padding-bottom: 74px; } html.has-radiobar .m1313-editbtn { bottom: 86px; }
 @media (max-width: 640px) { .radiobar-vol { display: none; } .radiobar { gap: 10px; padding-left: 12px; padding-right: 8px; } .radio-vol { display: none !important; } }
+
+.pb-grid > *, .pb-card, .pb-card-body { min-width: 0; } .pb-card .headline, .pb-show strong, .pb-hero-title, .pb-widget h1, .pb-widget h2, .pb-widget h3 { overflow-wrap: anywhere; }
+@media (max-width: 640px) { .pb-section.pb-boxed > .pb-in { padding-left: 16px; padding-right: 16px; } .pb-hero-inner { padding: 40px 16px; } .pb-hero-sub { font-size: 17px; } .pb-nl-title { font-size: 34px; } .pb-tm-quote { font-size: 21px; } }
