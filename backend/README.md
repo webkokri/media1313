@@ -48,24 +48,35 @@ curl -X PUT https://YOUR-API/api/content/SITE \
 
 Form submissions (newsletter, contact messages, song requests, members) are stored in the database; read them with any SQL client / phpMyAdmin.
 
-## Deploying to Hostinger Cloud + migrating to MySQL
+## Deploying to Hostinger (what is running on media1313.com)
 
-1. **Create a MySQL database** in hPanel → Databases; note host, name, user, password.
-2. **Node.js app**: hPanel → Websites → Add Website → *Node.js Apps*, choose Node **22.x (22.23.4 or newer)**. Upload/clone `backend/`, set the start command to `npm start`, build with `npm run build`.
-3. **Environment variables** (hPanel, or `.env`):
-   ```
-   DB_DIALECT=mysql
-   CMS_MYSQL_HOST=…  CMS_MYSQL_PORT=3306  CMS_MYSQL_DATABASE=…  CMS_MYSQL_USER=…  CMS_MYSQL_PASSWORD=…
-   CMS_ENCRYPTION_KEY=…   ADMIN_TOKEN=…
-   CORS_ORIGIN=https://your-site.com
-   SITE_URL=https://cms.your-site.com
-   CMS_FIRST_RUN=true      # for the first run only
-   ```
-4. Create the schema and content in MySQL: `npm run migrate && npm run seed`.
-5. Visit `/start` once to create the owner account, then set `CMS_FIRST_RUN=false` and **rebuild** (`npm run build` refuses to build with the setup page on).
-6. Build the React site with `VITE_API_URL=https://cms.your-site.com/api npm run build` and upload `dist/` (configure SPA fallback to `index.html`). Or serve both from one domain and proxy `/api` to the Node app.
+One Passenger Node app serves everything on the domain:
 
-**Moving existing local data** (articles you already wrote in SQLite): the easiest route is to re-create them in the MySQL-backed dashboard. For a bulk copy, export the StudioCMS tables and `m1313_*` tables from `data/media1313.db` (`sqlite3 data/media1313.db .dump`, data rows only) and import them into MySQL after step 4.
+| Piece | Location on the server |
+|---|---|
+| React build (static) | `~/domains/media1313.com/public_html` (deployed from this repo by Hostinger) |
+| Backend app (this folder, built) | `~/media1313-app` — outside the web root |
+| Private settings (DB password, keys) | `~/media1313.env`, permissions 600 — **never in git** |
+| Passenger config | `public/.htaccess` (shipped in the React build) |
+
+Request flow: files that exist in `public_html` are served directly; everything else (`/api/*`, `/dashboard`, and React routes like `/news`)
+goes to `server.cjs` → `server.mjs`, which hands CMS/API routes to StudioCMS and falls back to the React `index.html`.
+
+**Update the backend** (after `git pull` or uploading changed files into `~/media1313-app`):
+
+```bash
+export PATH=/opt/alt/alt-nodejs22/root/usr/bin:$PATH
+cd ~/media1313-app && set -a && . ~/media1313.env && set +a
+export GOMAXPROCS=2 UV_THREADPOOL_SIZE=2 RAYON_NUM_THREADS=2 TOKIO_WORKER_THREADS=2   # the server reports 48 CPUs; without this the build aborts
+npm install && npx astro build
+touch tmp/restart.txt        # restart the app
+```
+
+Notes
+- `~/media1313.env` keys: `DB_DIALECT=mysql`, `CMS_MYSQL_*`, `CMS_ENCRYPTION_KEY`, `ADMIN_TOKEN`, `CORS_ORIGIN`, `SITE_URL`, `WEB_ROOT`, `CMS_FIRST_RUN`.
+- Passenger sets `HOME` to the domain folder, so `.htaccess` passes the env-file path explicitly (`SetEnv MEDIA1313_ENV ...`).
+- `CMS_FIRST_RUN=true` turns the site into StudioCMS's setup wizard (it takes over `/`). Use it only to create the owner account, then set it back to `false` and rebuild.
+- Build the React site for a separate API host with `VITE_API_URL=https://other-host/api npm run build`; on this setup the default `/api` is correct.
 
 ### MySQL compatibility patches (important)
 

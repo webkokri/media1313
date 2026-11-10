@@ -1,9 +1,17 @@
-# Single-page app: send every non-file route (/news, /tv, ...) to index.html
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
-</IfModule>
+# MEDIA 1313 on Hostinger (LiteSpeed + Passenger).
+# Files that exist in public_html (the React build) are served directly.
+# Everything else (/api/*, /dashboard, and React routes like /news) goes to the Node app,
+# which serves the API/CMS and falls back to index.html for React routes.
+# The app lives OUTSIDE the web root; its secrets are in ~/media1313.env (not in git).
+PassengerAppRoot /home/u439638917/media1313-app
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile server.cjs
+PassengerBaseURI /
+PassengerRestartDir /home/u439638917/media1313-app/tmp
+# Path to the private settings file (the file itself holds the secrets and is NOT in git).
+SetEnv MEDIA1313_ENV /home/u439638917/media1313.env
+SetEnv GOMAXPROCS 2
+SetEnv UV_THREADPOOL_SIZE 2
+SetEnv RAYON_NUM_THREADS 2
+SetEnv TOKIO_WORKER_THREADS 2

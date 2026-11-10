@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "seed": "node --env-file=.env scripts/seed.mjs",
-    "start": "node ./dist/server/entry.mjs",
+    "start": "node server.cjs",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -26,6 +26,7 @@
     "@studiocms/md": "^0.5.1",
     "astro": "^7.4.0",
     "effect": "^3.22.2",
+    "esbuild": "^0.28.2",
     "mysql2": "^3.24.6",
     "patch-package": "^8.0.1",
     "sharp": "^0.35.5",

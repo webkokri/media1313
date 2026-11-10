@@ -6,7 +6,8 @@ import studioCMS from 'studiocms';
 export default defineConfig({
 	site: process.env.SITE_URL || (process.env.NODE_ENV === 'production' ? 'https://change.me' : 'http://localhost:4321'),
 	output: 'server',
-	adapter: node({ mode: 'standalone' }),
+	// 'middleware' lets server.mjs serve the API, the CMS dashboard AND the React site from one Node process.
+	adapter: node({ mode: 'middleware' }),
 	security: {
 		checkOrigin: false, // This depends on your hosting provider
 	},
