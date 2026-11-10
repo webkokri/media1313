@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowIcon, Equalizer, LiveBadge, Placeholder, PlayIcon, SectionHead, Segmented, VideoCard, VideoIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
+import VideoPlayer from '../components/VideoPlayer.jsx';
 import { Loaded, articleMeta, articleTo, clock, timeAgo, useApi, useNewsletter } from '../api.jsx';
 
 function OnNowPanel() {
@@ -56,7 +57,7 @@ export default function Home() {
 }
 
 function HomeBody({ feed }) {
-  const { FM, NOW_ON_RADIO, NOW_ON_TV, PODCASTS, SITE, VIDEOS } = useContent();
+  const { FM, NOW_ON_RADIO, NOW_ON_TV, PLAYER, PODCASTS, SITE, VIDEOS } = useContent();
   const { lead, secondary, latest, sections } = feed;
   const nl = useNewsletter('home');
   return (
@@ -73,10 +74,10 @@ function HomeBody({ feed }) {
       <section aria-label="Live now" style={{ background: 'var(--night)', color: '#fff' }}>
         <div className="container row" style={{ paddingTop: 40, paddingBottom: 40 }}>
           <div className="main-col stack" style={{ gap: 16 }} data-edit="NOW_ON_TV">
-            <div className="thumb-play r-16-9" style={{ borderRadius: 12, overflow: 'hidden' }}>
-              <span style={{ position: 'absolute', top: 16, left: 16 }}><LiveBadge /></span>
-              <span style={{ position: 'absolute', top: 18, right: 16, fontSize: 13, color: 'var(--soft-dark)' }}>1313 TV · Channel stream</span>
-              <Link to="/live" aria-label="Play live TV" className="play-circle" style={{ width: 88, height: 88 }}><PlayIcon size={34} color="#111216" /></Link>
+            <div className="thumb-play r-16-9" data-edit="PLAYER" style={{ borderRadius: 12, overflow: 'hidden' }}>
+              <VideoPlayer src={PLAYER.streamUrl} poster={PLAYER.poster} autoPlay={PLAYER.autoplay} muted={PLAYER.autoplay} />
+              <span style={{ position: 'absolute', top: 16, left: 16, pointerEvents: 'none' }}><LiveBadge /></span>
+              <span style={{ position: 'absolute', top: 18, right: 16, fontSize: 13, color: 'var(--soft-dark)', pointerEvents: 'none', textShadow: '0 1px 4px #000' }}>{PLAYER.title}</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>

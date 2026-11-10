@@ -28,7 +28,8 @@ VITE_API_URL=https://cms.example.com/api npm run build   # production files in /
 | `/podcasts` | Podcasts |
 | `/about` | About, Contact (`#contact`), Advertise, Careers |
 | `/signin` | Sign in / Create account |
-| `/admin` | **Studio** — admin, article editor, media library, visual live editor |
+| `/admin` | **Studio** — admin, article editor, media library, visual live editor, **page builder** |
+| any other address | A page made in the page builder (published pages also replace built-in ones) |
 
 ## Where things live
 
@@ -36,6 +37,7 @@ VITE_API_URL=https://cms.example.com/api npm run build   # production files in /
 - `src/api.jsx` / `src/content.jsx` — API client and site-wide content provider (all content comes from the backend)
 - `src/data.js` — only non-content helpers; content now lives in the backend (`backend/seed/content.json`)
 - `src/admin/` — the admin (loaded only at `/admin`)
+- `src/builder/` — page-builder engine: widget schema, CSS generator, widgets, renderer, and the canvas editing layer
 - `backend/` — Node.js API + admin API (SQLite dev / MySQL prod), see [backend/README.md](backend/README.md)
 - `src/components/` — `Header`, `Footer`, and shared UI (icons, tabs, players, placeholders) in `ui.jsx`
 - `src/pages/` — one file per page

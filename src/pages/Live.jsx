@@ -2,29 +2,15 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowIcon, CaptionsIcon, Equalizer, FullscreenIcon, LiveBadge, PauseIcon, PlayIcon, PlusIcon, RadioIcon, Segmented, ShareIcon, TvIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
+import VideoPlayer from '../components/VideoPlayer.jsx';
 
 function TVPlayer() {
-  const { NOW_ON_TV } = useContent();
-  const [playing, setPlaying] = useState(false);
+  const { NOW_ON_TV, PLAYER } = useContent();
   return (
     <div className="stack" style={{ gap: 20 }}>
-      <div className="thumb-play r-16-9" style={{ borderRadius: 14, overflow: 'hidden' }}>
-        <span style={{ position: 'absolute', top: 18, left: 18 }}><LiveBadge /></span>
-        {/* Replace this block with your <video> / HLS player */}
-        {!playing && (
-          <button type="button" aria-label="Play 1313 TV" className="play-circle" style={{ width: 96, height: 96 }} onClick={() => setPlaying(true)}>
-            <PlayIcon size={38} color="#111216" />
-          </button>
-        )}
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 18px', background: 'var(--night)', display: 'flex', gap: 16, alignItems: 'center' }}>
-          <button type="button" aria-label={playing ? 'Pause' : 'Play'} onClick={() => setPlaying(!playing)} style={iconBtn}>
-            {playing ? <PauseIcon size={20} color="#fff" /> : <PlayIcon size={20} color="#fff" />}
-          </button>
-          <div style={{ flex: 1, height: 4, background: '#3a3e47', borderRadius: 2 }}><div style={{ width: '100%', height: 4, background: 'var(--red)', borderRadius: 2 }} /></div>
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>LIVE</span>
-          <button type="button" aria-label="Captions" style={iconBtn}><CaptionsIcon color="#fff" /></button>
-          <button type="button" aria-label="Full screen" style={iconBtn}><FullscreenIcon color="#fff" /></button>
-        </div>
+      <div className="thumb-play r-16-9" data-edit="PLAYER" style={{ borderRadius: 14, overflow: 'hidden' }}>
+        <VideoPlayer src={PLAYER.streamUrl} poster={PLAYER.poster} autoPlay={PLAYER.autoplay} muted={PLAYER.autoplay} />
+        <span style={{ position: 'absolute', top: 18, left: 18, pointerEvents: 'none' }}><LiveBadge /></span>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px 32px', justifyContent: 'space-between' }}>
         <div style={{ flex: '1 1 360px' }}>

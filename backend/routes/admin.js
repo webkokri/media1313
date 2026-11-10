@@ -108,6 +108,52 @@ export function adminRoutes(r) {
     await log(c, 'published content', `${n} block(s) from live editor`); ok(c.res, { published: n });
   });
 
+  // ---------- pages (page builder) ----------
+  const RESERVED = new Set(['admin', 'api', 'uploads', 'assets', '__pb']);
+  const cleanSlug = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100);
+  const emptyTree = { sections: [] };
+  const pageOut = (p) => ({ id: p.id, slug: p.slug, title: p.title, status: p.status, hasDraft: !!p.draft_tree, tree: JSON.parse(p.draft_tree || p.tree || '{"sections":[]}'), liveTree: JSON.parse(p.tree || '{"sections":[]}'), settings: JSON.parse(p.settings || '{}'), updatedAt: p.updated_at });
+  get('/api/admin/pages', async (c) => ok(c.res, { pages: (await all('SELECT id, slug, title, status, draft_tree, updated_at FROM m1313_pages ORDER BY updated_at DESC')).map((p) => ({ id: p.id, slug: p.slug, title: p.title, status: p.status, hasDraft: !!p.draft_tree, updatedAt: p.updated_at })) }));
+  get('/api/admin/pages/:id', async (c) => { const p = await one('SELECT * FROM m1313_pages WHERE id = ?', [c.params.id]); p ? ok(c.res, { page: pageOut(p) }) : fail(c.res, 404, 'Not found'); });
+  post('/api/admin/pages', async (c) => {
+    const b = await readJson(c.req); const title = str(b.title, 300); const slug = cleanSlug(b.slug || title);
+    if (!title || !slug) return fail(c.res, 400, 'A title is required.');
+    if (RESERVED.has(slug)) return fail(c.res, 400, `“${slug}” is reserved. Choose another address.`);
+    if (await one('SELECT id FROM m1313_pages WHERE slug = ?', [slug])) return fail(c.res, 409, 'A page with that address already exists.');
+    const id = uuid(); const t = now();
+    await run('INSERT INTO m1313_pages (id, slug, title, status, tree, draft_tree, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, slug, title, 'draft', JSON.stringify(emptyTree), JSON.stringify(b.tree && Array.isArray(b.tree.sections) ? b.tree : emptyTree), JSON.stringify({ layout: 'default', description: '' }), t, t]);
+    await log(c, 'created page', title); ok(c.res, { page: pageOut(await one('SELECT * FROM m1313_pages WHERE id = ?', [id])) });
+  });
+  put('/api/admin/pages/:id', async (c) => { // saves a DRAFT (and title / address / settings); publish is separate
+    const b = await readJson(c.req); const cur = await one('SELECT * FROM m1313_pages WHERE id = ?', [c.params.id]);
+    if (!cur) return fail(c.res, 404, 'Not found');
+    const title = str(b.title, 300) || cur.title; const slug = b.slug ? cleanSlug(b.slug) : cur.slug;
+    if (slug !== cur.slug) { if (RESERVED.has(slug)) return fail(c.res, 400, `“${slug}” is reserved.`); if (await one('SELECT id FROM m1313_pages WHERE slug = ? AND id <> ?', [slug, cur.id])) return fail(c.res, 409, 'A page with that address already exists.'); }
+    if (b.tree && !Array.isArray(b.tree.sections)) return fail(c.res, 400, 'Invalid page layout.');
+    const treeJson = b.tree ? JSON.stringify(b.tree) : null;
+    if (treeJson && treeJson.length > 1500000) return fail(c.res, 413, 'This page is too large.');
+    await run('UPDATE m1313_pages SET title = ?, slug = ?, draft_tree = ?, settings = ?, updated_at = ? WHERE id = ?', [title, slug, treeJson ?? cur.draft_tree, JSON.stringify(b.settings || JSON.parse(cur.settings || '{}')), now(), cur.id]);
+    await log(c, 'saved draft of page', title); ok(c.res, { page: pageOut(await one('SELECT * FROM m1313_pages WHERE id = ?', [cur.id])) });
+  });
+  post('/api/admin/pages/:id/publish', async (c) => {
+    const cur = await one('SELECT * FROM m1313_pages WHERE id = ?', [c.params.id]); if (!cur) return fail(c.res, 404, 'Not found');
+    await run("UPDATE m1313_pages SET tree = ?, draft_tree = NULL, status = 'published', updated_at = ? WHERE id = ?", [cur.draft_tree || cur.tree, now(), cur.id]);
+    await log(c, 'published page', cur.title); ok(c.res, { page: pageOut(await one('SELECT * FROM m1313_pages WHERE id = ?', [cur.id])) });
+  });
+  post('/api/admin/pages/:id/unpublish', async (c) => {
+    const cur = await one('SELECT * FROM m1313_pages WHERE id = ?', [c.params.id]); if (!cur) return fail(c.res, 404, 'Not found');
+    await run("UPDATE m1313_pages SET status = 'draft', draft_tree = ?, updated_at = ? WHERE id = ?", [cur.draft_tree || cur.tree, now(), cur.id]);
+    await log(c, 'unpublished page', cur.title); ok(c.res);
+  });
+  post('/api/admin/pages/:id/duplicate', async (c) => {
+    const cur = await one('SELECT * FROM m1313_pages WHERE id = ?', [c.params.id]); if (!cur) return fail(c.res, 404, 'Not found');
+    let slug = `${cur.slug}-copy`, n = 2; while (await one('SELECT id FROM m1313_pages WHERE slug = ?', [slug])) slug = `${cur.slug}-copy-${n++}`;
+    const id = uuid(); const t = now();
+    await run('INSERT INTO m1313_pages (id, slug, title, status, tree, draft_tree, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, slug, `${cur.title} (copy)`, 'draft', JSON.stringify(emptyTree), cur.draft_tree || cur.tree, cur.settings, t, t]);
+    await log(c, 'duplicated page', cur.title); ok(c.res, { page: pageOut(await one('SELECT * FROM m1313_pages WHERE id = ?', [id])) });
+  });
+  del('/api/admin/pages/:id', async (c) => { const p = await one('SELECT title FROM m1313_pages WHERE id = ?', [c.params.id]); await run('DELETE FROM m1313_pages WHERE id = ?', [c.params.id]); await log(c, 'deleted page', p?.title); ok(c.res); });
+
   // ---------- media library ----------
   get('/api/admin/media', async (c) => ok(c.res, { media: await all('SELECT id, filename, url, mime, size_bytes, alt, created_at FROM m1313_media ORDER BY created_at DESC') }));
   post('/api/admin/media', async (c) => {

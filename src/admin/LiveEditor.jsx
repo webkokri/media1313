@@ -7,10 +7,10 @@ import FormEditor from './FormEditor.jsx';
 const PAGES = [['/', 'Home'], ['/news', 'News'], ['/tv', 'TV'], ['/radio', 'Radio'], ['/shows', 'Shows'], ['/podcasts', 'Podcasts'], ['/schedule', 'Schedule'], ['/sports', 'Sports'], ['/live', 'Live'], ['/about', 'About']];
 // Which content blocks appear on each page (shown in the "On this page" outline).
 const ON_PAGE = {
-  '/': ['SITE', 'NOW_ON_TV', 'TV_UP_NEXT', 'RADIO_UP_NEXT', 'NOW_ON_RADIO', 'VIDEOS', 'PODCASTS'],
+  '/': ['SITE', 'PLAYER', 'NOW_ON_TV', 'TV_UP_NEXT', 'RADIO_UP_NEXT', 'NOW_ON_RADIO', 'VIDEOS', 'PODCASTS'],
   '/news': ['NEWS_CATEGORIES', 'VIDEOS'], '/tv': ['NOW_ON_TV', 'TV_ROWS'], '/radio': ['NOW_ON_RADIO', 'RADIO_HOSTS', 'FM'],
   '/shows': ['SHOWS'], '/podcasts': ['PODCASTS', 'EPISODES'], '/schedule': ['SCHEDULE', 'FM'], '/sports': ['SPORTS'],
-  '/live': ['LIVE_UPDATES', 'NOW_ON_TV', 'NOW_ON_RADIO', 'SCHEDULE'], '/about': ['CONTACT_TOPICS', 'FM'],
+  '/live': ['PLAYER', 'LIVE_UPDATES', 'NOW_ON_TV', 'NOW_ON_RADIO', 'SCHEDULE'], '/about': ['CONTACT_TOPICS', 'FM'],
 };
 const DEVICES = [['desktop', '100%', 'Desktop', 'M3 4h18v12H3zM8 20h8M12 16v4'], ['tablet', '820px', 'Tablet', 'M6 2h12v20H6zM11 18h2'], ['mobile', '390px', 'Mobile', 'M8 2h8v20H8zM11 18h2']];
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);

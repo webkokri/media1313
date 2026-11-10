@@ -31,6 +31,7 @@ export const BLOCKS = {
   FOOTER_COLS: { label: 'Footer links', group: 'Site', page: '/', desc: 'The four link columns in the footer.' },
   NEWS_CATEGORIES: { label: 'News categories', group: 'Site', page: '/news', desc: 'Category tabs on the News page and choices in the article editor.' },
   CONTACT_TOPICS: { label: 'Contact form topics', group: 'Site', page: '/about', desc: 'Options in the contact form’s Topic menu.' },
+  PLAYER: { label: 'Live TV player (HLS link)', group: 'On air', page: '/', desc: 'The video player on the home and Live pages. Paste an HLS (.m3u8), MP4 or YouTube link.' },
   NOW_ON_TV: { label: 'On now — TV', group: 'On air', page: '/', desc: 'The show highlighted as live on 1313 TV.' },
   TV_UP_NEXT: { label: 'TV up next', group: 'On air', page: '/', desc: 'The “On now” list on the home page.' },
   NOW_ON_RADIO: { label: 'On now — Radio', group: 'On air', page: '/radio', desc: 'The show highlighted as live on 1313 Radio.' },

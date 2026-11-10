@@ -783,5 +783,11 @@
     "breaking": "Breaking alert headline appears here — tap through to the developing story and live coverage",
     "radioStreamUrl": "",
     "fm": "[FM 00.0]"
+  },
+  "PLAYER": {
+    "title": "1313 TV · Channel stream",
+    "streamUrl": "",
+    "poster": "",
+    "autoplay": false
   }
 }

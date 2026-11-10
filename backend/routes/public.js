@@ -25,7 +25,16 @@ export function publicRoutes(r) {
   r.get('/api/content', async (c) => {
     const out = {};
     for (const row of await getContent()) { const v = JSON.parse(row.content_value); if (v !== null) out[row.content_key] = v; }
+    // slugs of published builder pages: they replace the built-in page at the same address ("home" = "/")
+    out._pages = (await all("SELECT slug FROM m1313_pages WHERE status = 'published'")).map((r) => r.slug);
     send(c.res, 200, out, cache);
+  });
+
+  // A published page built in the page builder.
+  r.get('/api/pages/:slug', async (c) => {
+    const p = await one("SELECT slug, title, tree, settings FROM m1313_pages WHERE slug = ? AND status = 'published'", [c.params.slug]);
+    if (!p) return fail(c.res, 404, 'Page not found');
+    send(c.res, 200, { slug: p.slug, title: p.title, tree: JSON.parse(p.tree || '{"sections":[]}'), settings: JSON.parse(p.settings || '{}') }, cache);
   });
 
   r.post('/api/newsletter', async (c) => {

@@ -6,11 +6,14 @@ import { Account, Activity, ArticleEdit, Articles, ContentEdit, ContentList, Das
 import './admin.css';
 
 const LiveEditor = lazy(() => import('./LiveEditor.jsx'));
+const PageBuilder = lazy(() => import('./PageBuilder.jsx'));
+const PagesList = lazy(() => import('./PagesList.jsx'));
 
 const I = ({ d }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
 const NAV = [
   ['/admin', 'Dashboard', 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', true],
   ['/admin/live-edit', 'Live editor', 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
+  ['/admin/pages', 'Pages', 'M5 3h10l4 4v14H5zM14 3v5h5M9 13h6M9 17h6'],
   ['/admin/articles', 'Articles', 'M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM8 9h8M8 13h8M8 17h4'],
   ['/admin/content', 'Site content', 'M3 5h18v6H3zM3 15h8v4H3zM15 15h6v4h-6z'],
   ['/admin/media', 'Media', 'M3 5h18v14H3zM8 11l3 3 2-2 4 4M8.5 9.5h.01'],
@@ -93,7 +96,9 @@ function Shell() {
       <Routes>
         <Route path="login" element={<Navigate to="/admin" replace />} />
         <Route path="live-edit" element={<Suspense fallback={<div className="ad-login"><p className="ad-muted">Loading editor…</p></div>}><LiveEditor admin={admin} /></Suspense>} />
+        <Route path="builder/:id" element={<Suspense fallback={<div className="ad-login"><p className="ad-muted">Loading page builder…</p></div>}><PageBuilder /></Suspense>} />
         <Route element={<Layout admin={admin} onOut={out} />}>
+          <Route path="pages" element={<Suspense fallback={null}><PagesList /></Suspense>} />
           <Route index element={<Dashboard admin={admin} />} />
           <Route path="articles" element={<Articles />} />
           <Route path="articles/:id" element={<ArticleEdit />} />

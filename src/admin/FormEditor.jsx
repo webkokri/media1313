@@ -2,10 +2,10 @@ import { useState } from 'react';
 import MediaPicker from './MediaPicker.jsx';
 
 // A generic editor for any JSON shape: objects become labelled fields, lists become add/remove/reorder cards or rows.
-const NICE = { tvWeekday: 'TV — weekdays', tvWeekend: 'TV — weekends', radioWeekday: 'Radio — weekdays', radioWeekend: 'Radio — weekends', bg: 'Colour', tagColor: 'Tag colour', dur: 'Duration', desc: 'Description', sub: 'Subtitle', to: 'Link (page address)', sa: 'Score A', sb: 'Score B', a: 'Team A', b: 'Team B', gp: 'Games', w: 'Wins', l: 'Losses', pts: 'Points', fm: 'FM label', radioStreamUrl: 'Radio stream URL', breaking: 'Breaking-news ticker', dek: 'Standfirst', blurb: 'Blurb', byline: 'Byline', sports: 'Sports tabs', scores: 'Scores strip', side: 'Side stories', clips: 'Highlight clips', standings: 'Standings', lead: 'Top story', sportsDesk: 'Sports Desk box' };
+const NICE = { streamUrl: 'Stream URL (HLS .m3u8, MP4 or YouTube link)', poster: 'Poster image (shown before play)', autoplay: 'Autoplay (muted)', tvWeekday: 'TV — weekdays', tvWeekend: 'TV — weekends', radioWeekday: 'Radio — weekdays', radioWeekend: 'Radio — weekends', bg: 'Colour', tagColor: 'Tag colour', dur: 'Duration', desc: 'Description', sub: 'Subtitle', to: 'Link (page address)', sa: 'Score A', sb: 'Score B', a: 'Team A', b: 'Team B', gp: 'Games', w: 'Wins', l: 'Losses', pts: 'Points', fm: 'FM label', radioStreamUrl: 'Radio stream URL', breaking: 'Breaking-news ticker', dek: 'Standfirst', blurb: 'Blurb', byline: 'Byline', sports: 'Sports tabs', scores: 'Scores strip', side: 'Side stories', clips: 'Highlight clips', standings: 'Standings', lead: 'Top story', sportsDesk: 'Sports Desk box' };
 const TUPLES = { tvWeekday: ['Time', 'Show', 'Description', 'On now'], tvWeekend: ['Time', 'Show', 'Description', 'On now'], radioWeekday: ['Time', 'Show', 'Description', 'On now'], radioWeekend: ['Time', 'Show', 'Description', 'On now'], items: ['Title', 'When / info', 'Colour'] };
 const LONG = /^(desc|dek|blurb|message|text|content|breaking|sub)$/i;
-const IMG = /^(image|img|heroimage|cover|photo|src|avatar)$/i;
+const IMG = /^(image|img|heroimage|cover|photo|src|avatar|poster)$/i;
 const human = (k) => NICE[k] || String(k).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const isHex = (v) => typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v);
 const titleOf = (o, i) => (o && typeof o === 'object' ? o.title || o.name || o.label || o.show || o.team || o.tag || o.status : null) || `Item ${i + 1}`;

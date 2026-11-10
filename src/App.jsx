@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
@@ -14,6 +14,12 @@ import Shows from './pages/Shows.jsx';
 import Podcasts from './pages/Podcasts.jsx';
 import About from './pages/About.jsx';
 import SignIn from './pages/SignIn.jsx';
+import BuilderPage, { NotFound } from './builder/BuilderPage.jsx';
+import { useContent } from './content.jsx';
+
+const CanvasEditor = lazy(() => import('./builder/CanvasEditor.jsx'));
+// The page builder (admin) loads this site inside an iframe at /__pb to edit pages visually.
+const inBuilderFrame = (() => { try { return window.parent !== window && window.parent.location.pathname.startsWith('/admin/builder'); } catch { return false; } })();
 
 const DARK_PAGES = ['/live', '/tv'];
 
@@ -31,6 +37,11 @@ function ScrollManager() {
 
 export default function App() {
   const { pathname } = useLocation();
+  const { _pages = [] } = useContent();
+  if (pathname === '/__pb' && inBuilderFrame) return <Suspense fallback={null}><CanvasEditor /></Suspense>;
+  // A published builder page replaces the built-in page at the same address ("home" = "/").
+  const slug = pathname === '/' ? 'home' : pathname.replace(/^\/|\/$/g, '');
+  if (_pages.includes(slug)) return <><ScrollManager /><BuilderPage slug={slug} /></>;
   const dark = DARK_PAGES.includes(pathname);
   return (
     <div className={dark ? 'app app--dark' : 'app'}>
@@ -49,7 +60,7 @@ export default function App() {
         <Route path="/podcasts" element={<Podcasts />} />
         <Route path="/about" element={<About />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="*" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
     </div>

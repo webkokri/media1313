@@ -6,7 +6,8 @@ No framework and no build step. **SQLite** for development, **MySQL/MariaDB** in
 | What | Where |
 |---|---|
 | News articles | table `m1313_articles` — edited in the admin (`/admin/articles`) |
-| Menus, schedule, shows, podcasts, sports, on-air info | table `m1313_content` (JSON blocks with **draft / publish**) — edited in the admin or the visual live editor |
+| Builder pages (sections → columns → widgets) | table `m1313_pages` — edited in `/admin/pages` |
+| Menus, schedule, shows, podcasts, sports, on-air info, **Live TV player (HLS link)** | table `m1313_content` (JSON blocks with **draft / publish**) — edited in the admin or the visual live editor |
 | Uploaded images | `UPLOAD_DIR` (outside git and the web root), served at `/uploads/…`; listed in `m1313_media` |
 | Contact messages, newsletter, song requests, members, podcast follows | `m1313_*` tables — read in the admin |
 | Admin users + activity log | `m1313_admins`, `m1313_activity` |
@@ -31,6 +32,7 @@ The admin lives at **/admin**. To run everything from the backend alone, build t
 
 - **Dashboard** – counts, recent enquiries, activity.
 - **Live editor** (`/admin/live-edit`) – the real site in a preview frame. Click any outlined area, edit it in the side panel, see it change instantly. Device sizes, undo/redo, *Save draft*, *Publish*.
+- **Pages** – the visual **page builder** (`/admin/pages`): drag widgets onto sections and columns, edit text right on the page, per-device settings, navigator, undo/redo, draft/publish. Pages are stored in `m1313_pages`; a published page replaces the built-in page at the same address (`home` = the homepage).
 - **Articles** – write in Markdown with a toolbar and preview, cover image, category, tags, draft/publish.
 - **Site content** – every content block as a form (add/remove/reorder rows), with draft/publish.
 - **Media**, **Enquiries**, **Subscribers** (CSV export), **Song requests**, **Members**, **Activity**, **Users** (administrators only), **Account** (change password).
@@ -39,7 +41,7 @@ Security: passwords are scrypt-hashed; the session is an HttpOnly, SameSite cook
 
 ## API (public)
 
-`GET /api/home` · `GET /api/articles?category=&limit=&exclude=` · `GET /api/articles/:slug` · `GET /api/content` ·
+`GET /api/pages/:slug` (published builder page) · `GET /api/home` · `GET /api/articles?category=&limit=&exclude=` · `GET /api/articles/:slug` · `GET /api/content` ·
 `POST /api/newsletter` · `POST /api/contact` · `POST /api/song-requests` ·
 `POST /api/auth/register|login`, `GET /api/auth/me` (site members) · `GET|POST /api/podcasts-follow`
 
