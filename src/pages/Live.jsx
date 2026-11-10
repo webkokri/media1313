@@ -104,7 +104,7 @@ export default function Live() {
       </div>
 
       <div className="row">
-        <div className="stack" style={{ flex: '999 1 600px', minWidth: 0, gap: 20 }}>
+        <div data-edit="LIVE_UPDATES" className="stack" style={{ flex: '999 1 600px', minWidth: 0, gap: 20 }}>
           {isTV ? <TVPlayer /> : <RadioPlayer />}
 
           <div className="box" style={{ background: '#fff', color: 'var(--ink)', borderRadius: 14 }}>
@@ -121,7 +121,7 @@ export default function Live() {
           </div>
         </div>
 
-        <aside aria-label="Schedule" className="stack" style={{ flex: '1 1 340px', minWidth: 0, gap: 20 }}>
+        <aside data-edit="SCHEDULE" aria-label="Schedule" className="stack" style={{ flex: '1 1 340px', minWidth: 0, gap: 20 }}>
           <div className="box box--panel" style={{ padding: 22, borderRadius: 14 }}>
             <h2 className="headline" style={{ fontSize: 28, marginBottom: 12 }}>{isTV ? 'Today on 1313 TV' : 'Today on 1313 Radio'}</h2>
             {guide.map(([time, title, sub, now]) => (

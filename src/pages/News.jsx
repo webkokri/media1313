@@ -18,13 +18,13 @@ export default function News() {
 
   return (
     <main className="container stack" style={{ paddingTop: 40, paddingBottom: 64, gap: 40 }}>
-      <div className="stack" style={{ gap: 20, borderBottom: '3px solid var(--ink)', paddingBottom: 20 }}>
+      <div data-edit="NEWS_CATEGORIES" className="stack" style={{ gap: 20, borderBottom: '3px solid var(--ink)', paddingBottom: 20 }}>
         <h1 className="page-title">News</h1>
         <PillTabs label="News sections" options={NEWS_CATEGORIES} value={cat} onChange={changeCat} />
       </div>
 
       <div className="row" style={{ gap: 40 }}>
-        <div className="stack" style={{ flex: '999 1 640px', minWidth: 0, gap: 36 }}>
+        <div data-edit-articles="1" className="stack" style={{ flex: '999 1 640px', minWidth: 0, gap: 36 }}>
           {list.error && <p role="alert" className="meta">Sorry — stories could not be loaded. {list.error.message}</p>}
           {!list.error && !list.data && <p className="meta" aria-live="polite">Loading…</p>}
           {lead && <Link to={articleTo(lead)} style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'center' }}>
@@ -52,7 +52,7 @@ export default function News() {
             </div>
           )}
 
-          <div className="box box--night stack" style={{ gap: 20, padding: 28 }}>
+          <div data-edit="VIDEOS" className="box box--night stack" style={{ gap: 20, padding: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <h2 className="display" style={{ fontSize: 30 }}>News on video</h2>
               <Link to="/tv" style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>More on 1313 TV</Link>

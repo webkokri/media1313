@@ -29,7 +29,7 @@ export default function Podcasts() {
     <main className="container stack" style={{ paddingTop: 40, paddingBottom: 64, gap: 44 }}>
       <h1 className="page-title" style={{ borderBottom: '3px solid var(--ink)', paddingBottom: 20 }}>Podcasts</h1>
 
-      <section aria-label="Featured podcast" className="box box--ink" style={{ display: 'flex', flexWrap: 'wrap', gap: 36, alignItems: 'center', padding: 32, borderRadius: 14 }}>
+      <section data-edit="PODCASTS" aria-label="Featured podcast" className="box box--ink" style={{ display: 'flex', flexWrap: 'wrap', gap: 36, alignItems: 'center', padding: 32, borderRadius: 14 }}>
         <div className="r-1-1" style={{ flex: '0 0 280px', background: 'var(--red-dark)', borderRadius: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 22 }}>
           <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5 }}>MEDIA 1313</span>
           <span className="display" style={{ fontSize: 56, lineHeight: 0.9 }}>The Briefing</span>
@@ -50,7 +50,7 @@ export default function Podcasts() {
       </section>
 
       <div className="row" style={{ gap: 40 }}>
-        <section aria-label="Latest episodes" style={{ flex: '999 1 560px', minWidth: 0 }}>
+        <section data-edit="EPISODES" aria-label="Latest episodes" style={{ flex: '999 1 560px', minWidth: 0 }}>
           <h2 className="display" style={{ fontSize: 32, marginBottom: 14 }}>Latest episodes</h2>
           {EPISODES.map((e, i) => {
             const on = playing === i;
@@ -80,7 +80,7 @@ export default function Podcasts() {
         </aside>
       </div>
 
-      <section aria-label="All podcasts">
+      <section data-edit="PODCASTS" aria-label="All podcasts">
         <h2 className="display" style={{ fontSize: 32, borderBottom: '3px solid var(--ink)', paddingBottom: 10, marginBottom: 20 }}>All podcasts</h2>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
           {PODCASTS.map((p) => (

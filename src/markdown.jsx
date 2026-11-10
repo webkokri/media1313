@@ -17,6 +17,8 @@ export default function Markdown({ source = '' }) {
   return source.split(/\n{2,}/).map((block, i) => {
     const b = block.trim();
     if (!b) return null;
+    const img = b.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+    if (img && /^(https?:|\/)/.test(img[2])) return <figure key={i} style={{ margin: '24px 0' }}><img src={img[2]} alt={img[1]} style={{ width: '100%', borderRadius: 8 }} />{img[1] && <figcaption className="meta">{img[1]}</figcaption>}</figure>;
     if (b.startsWith('### ')) return <h3 key={i}>{inline(b.slice(4))}</h3>;
     if (b.startsWith('## ') || b.startsWith('# ')) return <h2 key={i}>{inline(b.replace(/^#+\s/, ''))}</h2>;
     if (b.startsWith('>')) {

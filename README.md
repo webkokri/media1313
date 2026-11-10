@@ -28,13 +28,15 @@ VITE_API_URL=https://cms.example.com/api npm run build   # production files in /
 | `/podcasts` | Podcasts |
 | `/about` | About, Contact (`#contact`), Advertise, Careers |
 | `/signin` | Sign in / Create account |
+| `/admin` | **Studio** — admin, article editor, media library, visual live editor |
 
 ## Where things live
 
 - `src/styles.css` — colours, fonts and all shared styles (edit the `:root` variables to re-brand)
 - `src/api.jsx` / `src/content.jsx` — API client and site-wide content provider (all content comes from the backend)
 - `src/data.js` — only non-content helpers; content now lives in the backend (`backend/seed/content.json`)
-- `backend/` — StudioCMS + Node.js API, see [backend/README.md](backend/README.md)
+- `src/admin/` — the admin (loaded only at `/admin`)
+- `backend/` — Node.js API + admin API (SQLite dev / MySQL prod), see [backend/README.md](backend/README.md)
 - `src/components/` — `Header`, `Footer`, and shared UI (icons, tabs, players, placeholders) in `ui.jsx`
 - `src/pages/` — one file per page
 

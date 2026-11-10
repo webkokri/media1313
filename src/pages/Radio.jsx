@@ -28,7 +28,7 @@ export default function Radio() {
   return (
     <main>
       {STREAM_URL && <audio id="radio-stream" src={STREAM_URL} preload="none" />}
-      <section aria-label="1313 Radio live" style={{ background: 'var(--amber)' }}>
+      <section data-edit="NOW_ON_RADIO" aria-label="1313 Radio live" style={{ background: 'var(--amber)' }}>
         <div className="container row" style={{ paddingTop: 56, paddingBottom: 56, gap: 40, alignItems: 'center' }}>
           <div className="stack" style={{ flex: '2 1 520px', gap: 16 }}>
             <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5 }}>1313 RADIO · {FM} · ON AIR</span>
@@ -59,7 +59,7 @@ export default function Radio() {
       </section>
 
       <div className="container stack" style={{ paddingTop: 48, paddingBottom: 64, gap: 48 }}>
-        <section aria-label="On-air lineup">
+        <section data-edit="RADIO_HOSTS" aria-label="On-air lineup">
           <SectionHead title="The weekday lineup" linkText="Full radio schedule" to="/schedule" />
           <div className="grid grid-220">
             {RADIO_HOSTS.map((h) => (

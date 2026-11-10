@@ -14,7 +14,7 @@ export default function Shows() {
   const shows = SHOWS.filter((s) => (!type || s.type === type) && s.title.toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
-    <main className="container stack" style={{ paddingTop: 40, paddingBottom: 64, gap: 28 }}>
+    <main data-edit="SHOWS" className="container stack" style={{ paddingTop: 40, paddingBottom: 64, gap: 28 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: '3px solid var(--ink)', paddingBottom: 20 }}>
         <div>
           <h1 className="page-title">Shows</h1>

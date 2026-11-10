@@ -29,9 +29,37 @@ export const VideoIcon = (p) => <Stroke size={14} {...p}><rect x="3" y="5" width
 export const SuccessIcon = (p) => <Stroke size={40} color="#0F7A5A" {...p}><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-6" /></Stroke>;
 
 /* ---------- Bits ---------- */
+/** Brand icon: red tile, white play triangle (TV) emitting amber broadcast waves (radio / live). */
+export const LogoMark = ({ className = '' }) => (
+  <svg className={`logo-mark ${className}`} viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+    <rect className="logo-screen" x="1" y="1" width="50" height="50" rx="13" fill="#d21f26" />
+    <path className="logo-play" d="M11 15l16 11-16 11z" fill="#fff" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
+    <path className="logo-arc logo-arc--1" d="M33.5 20.5a7.5 7.5 0 0 1 0 11" />
+    <path className="logo-arc logo-arc--2" d="M37.5 15.5a14 14 0 0 1 0 21" />
+    <path className="logo-arc logo-arc--3" d="M41.5 10.5a20.5 20.5 0 0 1 0 31" />
+  </svg>
+);
+
+// Each digit of "1313" sits in a little reel: [target, three filler digits, target]. Rolling the reel
+// one full turn and snapping back is seamless because the first and last entries are the same.
+const REELS = [['1', '8', '5', '2'], ['3', '9', '6', '0'], ['1', '7', '4', '9'], ['3', '2', '6', '8']];
+
+/** Animated wordmark: MEDIA tunes in letter by letter, 1313 rolls like a counter. */
 export const Logo = ({ className = '' }) => (
   <Link to="/" className={`logo ${className}`} aria-label="MEDIA 1313 home">
-    <span>MEDIA</span><span>1313</span>
+    <LogoMark />
+    <span className="logo-word" aria-hidden="true">
+      <span className="logo-media">
+        {'MEDIA'.split('').map((c, i) => <span key={i} className="ml" style={{ '--i': i }}>{c}</span>)}
+      </span>
+      <span className="logo-num">
+        {REELS.map(([t, ...fill], i) => (
+          <span key={i} className="rd" style={{ '--i': i }}>
+            <b>{[t, ...fill, t].map((d, j) => <i key={j}>{d}</i>)}</b>
+          </span>
+        ))}
+      </span>
+    </span>
   </Link>
 );
 

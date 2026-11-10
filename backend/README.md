@@ -1,94 +1,77 @@
-# MEDIA 1313 — Backend (StudioCMS + Node.js)
+# MEDIA 1313 — Backend (plain Node.js)
 
-[StudioCMS](https://studiocms.dev) (Astro, Node adapter) plus a small JSON API the React site calls.
+One small Node process serves the JSON API, the admin API, uploaded images and the React site.
+No framework and no build step. **SQLite** for development, **MySQL/MariaDB** in production (same code, switch with `DB_DIALECT`).
 
-| What | Where it lives |
+| What | Where |
 |---|---|
-| **News articles** | StudioCMS pages — edit in the dashboard (`/dashboard`), categories & tags included |
-| **Shows, schedule, podcasts, nav, sports, on-air info** | table `m1313_content` (JSON blocks), served at `GET /api/content` |
-| **Newsletter, contact form, song requests, member accounts, podcast follows** | tables `m1313_*` |
+| News articles | table `m1313_articles` — edited in the admin (`/admin/articles`) |
+| Menus, schedule, shows, podcasts, sports, on-air info | table `m1313_content` (JSON blocks with **draft / publish**) — edited in the admin or the visual live editor |
+| Uploaded images | `UPLOAD_DIR` (outside git and the web root), served at `/uploads/…`; listed in `m1313_media` |
+| Contact messages, newsletter, song requests, members, podcast follows | `m1313_*` tables — read in the admin |
+| Admin users + activity log | `m1313_admins`, `m1313_activity` |
 
-Requires **Node ≥ 22.23.4** (a StudioCMS/Astro 7 requirement).
+Requires Node ≥ 20.
 
 ## Local development
 
 ```bash
 cd backend
 npm install
-cp .env.example .env            # then fill CMS_ENCRYPTION_KEY (openssl rand -base64 16) and ADMIN_TOKEN
-npm run migrate                 # creates the StudioCMS tables
-npm run seed                    # creates the m1313_* tables + starter content + 28 sample articles
-npm run dev                     # http://localhost:4321
+cp .env.example .env        # set APP_SECRET (openssl rand -base64 32)
+npm run seed                # creates all tables, starter content and 28 sample articles
+ADMIN_EMAIL=you@example.com ADMIN_NAME="You" ADMIN_PASSWORD='a-long-password' npm run create-admin
+npm run dev                 # API on http://localhost:4321
 ```
 
-1. Open <http://localhost:4321/start> and complete the wizard — this creates **your owner account**.
-2. Set `CMS_FIRST_RUN=false` in `.env`, then use <http://localhost:4321/dashboard> to write articles.
-3. In another terminal, from the project root, run the React site: `npm run dev` (Vite proxies `/api` to port 4321).
+Then, from the project root, `npm run dev` for the React site (Vite proxies `/api` and `/uploads` to port 4321).
+The admin lives at **/admin**. To run everything from the backend alone, build the site (`npm run build` in the root) — the server serves `../dist`.
 
-## API
+## The admin ("Studio")
 
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/home` | lead story, secondary stories, latest, per-category sections |
-| GET | `/api/articles?category=&limit=&exclude=` | article list (+ category names) |
-| GET | `/api/articles/:slug` | full article + related |
-| GET | `/api/content` · `/api/content/:key` | site content blocks |
-| PUT | `/api/content/:key` | replace a block (`Authorization: Bearer $ADMIN_TOKEN`) |
-| POST | `/api/newsletter` · `/api/contact` · `/api/song-requests` | forms |
-| POST | `/api/auth/register` · `/api/auth/login`, GET `/api/auth/me` | member accounts (signed token) |
-| GET/POST | `/api/podcasts-follow` | follow podcasts (signed-in members) |
+- **Dashboard** – counts, recent enquiries, activity.
+- **Live editor** (`/admin/live-edit`) – the real site in a preview frame. Click any outlined area, edit it in the side panel, see it change instantly. Device sizes, undo/redo, *Save draft*, *Publish*.
+- **Articles** – write in Markdown with a toolbar and preview, cover image, category, tags, draft/publish.
+- **Site content** – every content block as a form (add/remove/reorder rows), with draft/publish.
+- **Media**, **Enquiries**, **Subscribers** (CSV export), **Song requests**, **Members**, **Activity**, **Users** (administrators only), **Account** (change password).
 
-Editing a content block, e.g. the live-radio stream URL:
+Security: passwords are scrypt-hashed; the session is an HttpOnly, SameSite cookie; changing a password signs out other sessions; all admin writes need an `X-Requested-With` header (CSRF); login is rate-limited per IP; uploads are checked by file signature (JPG/PNG/WebP/GIF/PDF only, 10 MB).
 
-```bash
-curl -X PUT https://YOUR-API/api/content/SITE \
-  -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"breaking":"…","radioStreamUrl":"https://stream.example.com/live","fm":"FM 98.1"}'
-```
+## API (public)
 
-Form submissions (newsletter, contact messages, song requests, members) are stored in the database; read them with any SQL client / phpMyAdmin.
+`GET /api/home` · `GET /api/articles?category=&limit=&exclude=` · `GET /api/articles/:slug` · `GET /api/content` ·
+`POST /api/newsletter` · `POST /api/contact` · `POST /api/song-requests` ·
+`POST /api/auth/register|login`, `GET /api/auth/me` (site members) · `GET|POST /api/podcasts-follow`
 
-## Deploying to Hostinger (what is running on media1313.com)
-
-One Passenger Node app serves everything on the domain:
+## Production on Hostinger (what runs on media1313.com)
 
 | Piece | Location on the server |
 |---|---|
-| React build (static) | `~/domains/media1313.com/public_html` (deployed from this repo by Hostinger) |
-| Backend app (this folder, built) | `~/media1313-app` — outside the web root |
-| Private settings (DB password, keys) | `~/media1313.env`, permissions 600 — **never in git** |
-| Passenger config | `public/.htaccess` (shipped in the React build) |
+| React build (static) | `~/domains/media1313.com/public_html` — built from this repo by Hostinger on every push |
+| Backend (this folder) | `~/media1313-app` — outside the web root, run by Passenger |
+| Private settings | `~/media1313.env` (permissions 600, **never in git**) |
+| Uploaded images | `~/media1313-uploads` |
+| Passenger config | `public/.htaccess` (ships with the React build; contains no secrets) |
 
-Request flow: files that exist in `public_html` are served directly; everything else (`/api/*`, `/dashboard`, and React routes like `/news`)
-goes to `server.cjs` → `server.mjs`, which hands CMS/API routes to StudioCMS and falls back to the React `index.html`.
+Files that exist in `public_html` are served directly; everything else (`/api/*`, `/uploads/*`, `/admin`, React routes) goes to `server.cjs`.
 
-**Update the backend** (after `git pull` or uploading changed files into `~/media1313-app`):
+`~/media1313.env`:
+```
+DB_DIALECT=mysql
+CMS_MYSQL_HOST=localhost  CMS_MYSQL_PORT=3306  CMS_MYSQL_DATABASE=…  CMS_MYSQL_USER=…  CMS_MYSQL_PASSWORD=…
+APP_SECRET=…                      # signs login cookies
+UPLOAD_DIR=/home/<user>/media1313-uploads
+WEB_ROOT=/home/<user>/domains/media1313.com/public_html
+```
 
+Update the backend (no build needed):
 ```bash
 export PATH=/opt/alt/alt-nodejs22/root/usr/bin:$PATH
 cd ~/media1313-app && set -a && . ~/media1313.env && set +a
-export GOMAXPROCS=2 UV_THREADPOOL_SIZE=2 RAYON_NUM_THREADS=2 TOKIO_WORKER_THREADS=2   # the server reports 48 CPUs; without this the build aborts
-npm install && npx astro build
-touch tmp/restart.txt        # restart the app
+npm install --omit=dev
+node scripts/seed.mjs            # only if the schema changed — creates missing tables/columns
+touch tmp/restart.txt            # restart
 ```
+Passenger sets `HOME` to the domain folder, so `public/.htaccess` passes the env-file path explicitly (`SetEnv MEDIA1313_ENV …`). The host reports 48 CPUs; the `SetEnv … THREADS 2` lines in `.htaccess` stop native modules from over-allocating threads.
 
-Notes
-- `~/media1313.env` keys: `DB_DIALECT=mysql`, `CMS_MYSQL_*`, `CMS_ENCRYPTION_KEY`, `ADMIN_TOKEN`, `CORS_ORIGIN`, `SITE_URL`, `WEB_ROOT`, `CMS_FIRST_RUN`.
-- Passenger sets `HOME` to the domain folder, so `.htaccess` passes the env-file path explicitly (`SetEnv MEDIA1313_ENV ...`).
-- `CMS_FIRST_RUN=true` turns the site into StudioCMS's setup wizard (it takes over `/`). Use it only to create the owner account, then set it back to `false` and rebuild.
-- Build the React site for a separate API host with `VITE_API_URL=https://other-host/api npm run build`; on this setup the default `/api` is correct.
-
-### MySQL compatibility patches (important)
-
-StudioCMS 0.7.0 does not work on MySQL/MariaDB out of the box, so this project ships two small
-[patch-package](https://github.com/ds300/patch-package) patches in `backend/patches/`. They are applied automatically by
-`npm install` (`postinstall`) — **do not delete the `patches/` folder or skip `npm install` on the server.**
-
-| Patch | Problem it fixes |
-|---|---|
-| `@withstudiocms/kysely` | `text` primary/foreign-key columns are rejected by MySQL (error 1170) → become `varchar(255)`; integer primary keys get `AUTO_INCREMENT` |
-| `@withstudiocms/sdk` | `WHERE id IN ()` (pages with no tags/categories) is a syntax error on MySQL |
-
-Tested against Hostinger's MariaDB 11.8: migrate, seed, article/home/content API, forms and member sign-up all work.
-**Not yet tested on MySQL:** creating and editing articles from the StudioCMS dashboard (needs an owner account).
-Re-check these patches when upgrading `studiocms`; they may no longer be needed.
+Add an admin: `ADMIN_EMAIL=… ADMIN_NAME=… ADMIN_PASSWORD=… ADMIN_ROLE=admin node scripts/create-admin.mjs` (same command resets a password).

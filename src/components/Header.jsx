@@ -22,7 +22,7 @@ export default function Header() {
         </div>
       </div>
 
-      <header className="site-header">
+      <header className="site-header" data-edit="NAV">
         <div className="container">
           <Logo />
           <nav aria-label="Main" className="main-nav">

@@ -38,7 +38,7 @@ export default function About() {
           <Pillar to="/news" color="var(--ink)" title="1313 News" text="Local and world reporting, updated all day on the web and in the app." />
         </div>
 
-        <section id="contact" aria-label="Contact" className="row" style={{ gap: 48 }}>
+        <section data-edit="CONTACT_TOPICS" id="contact" aria-label="Contact" className="row" style={{ gap: 48 }}>
           <div className="stack" style={{ flex: '1 1 320px', gap: 18 }}>
             <h2 className="display" style={{ fontSize: 48, lineHeight: 1 }}>Contact us</h2>
             <p style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--body)' }}>Send a news tip, give feedback on a show or reach any department.</p>

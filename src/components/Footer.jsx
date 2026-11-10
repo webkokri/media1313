@@ -5,7 +5,7 @@ import { useContent } from '../content.jsx';
 export default function Footer() {
   const { FOOTER_COLS } = useContent();
   return (
-    <footer className="site-footer">
+    <footer className="site-footer" data-edit="FOOTER_COLS">
       <div className="container">
         <div className="footer-top">
           <div className="stack" style={{ flex: '1 1 260px', gap: 14 }}>

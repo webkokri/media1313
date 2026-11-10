@@ -20,7 +20,7 @@ export default function TV() {
       </section>
 
       <div className="container stack" style={{ paddingTop: 40, paddingBottom: 64, gap: 48 }}>
-        <Link to="/live" className="box box--panel" style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center', padding: '18px 22px' }}>
+        <Link data-edit="NOW_ON_TV" to="/live" className="box box--panel" style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center', padding: '18px 22px' }}>
           <LiveBadge label="LIVE NOW" />
           <span className="headline" style={{ fontSize: 26 }}>{NOW_ON_TV.title}</span>
           <span className="muted-dark" style={{ fontSize: 14 }}>{NOW_ON_TV.time} · Up next: Sports Desk</span>
@@ -28,7 +28,7 @@ export default function TV() {
         </Link>
 
         {TV_ROWS.map((row) => (
-          <section key={row.title} className="stack" style={{ gap: 18 }}>
+          <section data-edit="TV_ROWS" key={row.title} className="stack" style={{ gap: 18 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <h2 className="display" style={{ fontSize: 32 }}>{row.title}</h2>
               <Link to="/shows" style={{ fontWeight: 600, fontSize: 14, color: 'var(--soft-dark)' }}>See all</Link>

@@ -118,10 +118,53 @@ h1, h2, h3, p { margin: 0; }
 .utility .group { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
 .site-header { background: #fff; border-bottom: 1px solid var(--line); color: var(--ink); }
 .site-header .container { display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: center; justify-content: space-between; padding-top: 16px; padding-bottom: 16px; }
-.logo { display: inline-flex; align-items: center; gap: 8px; font-family: var(--cond); font-weight: 800; line-height: 1; font-size: 38px; }
-.logo span:first-child { letter-spacing: 1px; }
-.logo span:last-child { color: #fff; background: var(--red); padding: 2px 10px 0; border-radius: 4px; }
+.logo { position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: var(--cond); font-weight: 800; line-height: 1; font-size: 38px; }
 .logo:hover { color: inherit; }
+.logo-word { display: inline-flex; align-items: center; gap: 8px; }
+.logo-media { display: inline-flex; letter-spacing: 1px; }
+.ml { display: inline-block; }
+.logo-num { position: relative; display: inline-flex; overflow: hidden; color: #fff; background: var(--red); padding: 2px 10px 0; border-radius: 4px; }
+.rd { display: inline-block; height: 1em; overflow: hidden; }
+.rd b { display: flex; flex-direction: column; font-weight: inherit; }
+.rd i { display: block; height: 1em; line-height: 1; font-style: normal; }
+
+/* ---- icon ---- */
+.logo-mark { width: 1.3em; height: 1.3em; flex: none; margin-right: 4px; filter: drop-shadow(0 2px 0 rgba(17,18,22,.12)); }
+.logo-arc { fill: none; stroke: var(--amber); stroke-width: 3.6; stroke-linecap: round; opacity: .3; }
+.logo-screen, .logo-play, .logo-arc { transform-box: fill-box; transform-origin: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* icon: pops in, the triangle breathes, waves are emitted outward one after another */
+  .logo-screen { animation: logo-pop .7s cubic-bezier(.2,1.4,.4,1) both; }
+  .logo-play { animation: logo-pop .6s .15s cubic-bezier(.2,1.4,.4,1) both, logo-breathe 3s 1.2s ease-in-out infinite; }
+  .logo-arc { animation: logo-wave 2s ease-in-out infinite; }
+  .logo-arc--1 { animation-delay: .25s; }
+  .logo-arc--2 { animation-delay: .55s; }
+  .logo-arc--3 { animation-delay: .85s; }
+  .logo:hover .logo-play { animation: logo-nudge .5s ease-out; }
+
+  /* MEDIA: each letter tunes in from a blur, then a wave ripples through the word on every cycle */
+  .ml { animation: ml-in .7s calc(.35s + var(--i) * .08s) cubic-bezier(.2,.9,.3,1.2) both,
+                   ml-wave 9s calc(1.6s + var(--i) * .07s) ease-in-out infinite; }
+  /* 1313: pill wipes open, digits drop in, then the reels roll on every cycle */
+  .logo-num { animation: pill-in .6s .85s cubic-bezier(.2,.9,.3,1.15) both; }
+  .rd { animation: rd-in .5s calc(1.25s + var(--i) * .09s) cubic-bezier(.2,.9,.3,1.2) both; }
+  .rd b { animation: rd-roll 9s calc(1.8s + var(--i) * .1s) cubic-bezier(.5,0,.2,1) infinite; }
+  .logo-num::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.6) 50%, transparent 65%); transform: translateX(-120%); animation: pill-shine 9s 1.9s ease-in-out infinite; }
+  }
+@media (prefers-reduced-motion: reduce) { .logo-arc { opacity: 1; } }
+
+@keyframes logo-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes logo-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes logo-wave { 0%, 100% { opacity: .3; transform: translateX(-1px); } 30% { opacity: 1; transform: translateX(1.2px); } 65% { opacity: .3; transform: translateX(2px); } }
+@keyframes logo-nudge { 40% { transform: translateX(2px) scale(1.08); } }
+@keyframes ml-in { from { opacity: 0; transform: translateY(-.55em) skewX(-14deg); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes ml-wave { 0%, 80%, 100% { transform: none; color: inherit; } 86% { transform: translateY(-.14em); color: var(--red); } 92% { transform: none; color: inherit; } }
+@keyframes pill-in { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+@keyframes rd-in { from { transform: translateY(70%); opacity: 0; filter: blur(3px); } to { transform: none; opacity: 1; filter: none; } }
+@keyframes rd-roll { 0%, 78% { transform: translateY(0); } 92%, 100% { transform: translateY(-4em); } }
+@keyframes pill-shine { 0%, 80% { transform: translateX(-120%); } 94%, 100% { transform: translateX(120%); } }
+
 .main-nav { display: flex; flex-wrap: wrap; gap: 4px 26px; font-weight: 600; font-size: 15px; flex: 1 1 420px; }
 .main-nav a { padding: 12px 0; color: var(--ink); }
 .main-nav a.active { color: var(--red-dark); box-shadow: inset 0 -3px 0 var(--red); }
@@ -196,3 +239,9 @@ tbody tr { border-top: 1px solid var(--line); }
   .prose { font-size: 18px; }
   .two-col-form { grid-template-columns: 1fr !important; }
 }
+
+/* ---- visual editor (site shown inside /admin/live-edit) ---- */
+html.m1313-editing [data-edit], html.m1313-editing [data-edit-articles] { cursor: pointer; }
+html.m1313-editing [data-edit]:hover, html.m1313-editing [data-edit-articles]:hover { outline: 2px dashed #2563eb; outline-offset: -2px; }
+html.m1313-editing [data-edit] [data-edit]:hover { outline-color: #7c3aed; }
+html.m1313-editing a { cursor: default; }

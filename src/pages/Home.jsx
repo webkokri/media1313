@@ -8,7 +8,7 @@ function OnNowPanel() {
   const { FM, NOW_ON_RADIO, RADIO_UP_NEXT, TV_UP_NEXT } = useContent();
   const [tab, setTab] = useState('tv');
   return (
-    <div className="box box--panel stack" style={{ flex: '1 1 340px', minWidth: 0, gap: 16, padding: 20 }}>
+    <div data-edit="TV_UP_NEXT" className="box box--panel stack" style={{ flex: '1 1 340px', minWidth: 0, gap: 16, padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 className="cond" style={{ fontWeight: 700, fontSize: 26 }}>On now</h2>
         <Segmented label="Channel type" value={tab} onChange={setTab} options={[{ value: 'tv', label: 'TV' }, { value: 'radio', label: 'Radio' }]} />
@@ -62,7 +62,7 @@ function HomeBody({ feed }) {
   return (
     <main>
       {/* Breaking ticker */}
-      <div className="ticker">
+      <div className="ticker" data-edit="SITE">
         <div className="container">
           <strong>BREAKING</strong>
           <p>{SITE.breaking}</p>
@@ -72,7 +72,7 @@ function HomeBody({ feed }) {
       {/* Live band */}
       <section aria-label="Live now" style={{ background: 'var(--night)', color: '#fff' }}>
         <div className="container row" style={{ paddingTop: 40, paddingBottom: 40 }}>
-          <div className="main-col stack" style={{ gap: 16 }}>
+          <div className="main-col stack" style={{ gap: 16 }} data-edit="NOW_ON_TV">
             <div className="thumb-play r-16-9" style={{ borderRadius: 12, overflow: 'hidden' }}>
               <span style={{ position: 'absolute', top: 16, left: 16 }}><LiveBadge /></span>
               <span style={{ position: 'absolute', top: 18, right: 16, fontSize: 13, color: 'var(--soft-dark)' }}>1313 TV · Channel stream</span>
@@ -92,7 +92,7 @@ function HomeBody({ feed }) {
       </section>
 
       {/* Top stories */}
-      <section aria-label="Top stories" className="container" style={{ paddingTop: 56, paddingBottom: 24 }}>
+      <section data-edit-articles="1" aria-label="Top stories" className="container" style={{ paddingTop: 56, paddingBottom: 24 }}>
         <SectionHead title="Top Stories" linkText="All news" to="/news" />
         <div className="row">
           <article className="stack" style={{ flex: '2 1 520px', minWidth: 0, gap: 14 }}>
@@ -136,7 +136,7 @@ function HomeBody({ feed }) {
       </section>
 
       {/* Watch */}
-      <section aria-label="Watch" className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
+      <section data-edit="VIDEOS" aria-label="Watch" className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
         <SectionHead title="Watch" linkText="All video & shows" to="/shows" />
         <div className="grid grid-220">
           {VIDEOS.map((v) => <VideoCard key={v.title} title={v.title} kicker={v.show} duration={v.dur} />)}
@@ -144,11 +144,11 @@ function HomeBody({ feed }) {
       </section>
 
       {/* Listen */}
-      <section aria-label="Listen" style={{ background: 'var(--paper)', marginTop: 16 }}>
+      <section data-edit="PODCASTS" aria-label="Listen" style={{ background: 'var(--paper)', marginTop: 16 }}>
         <div className="container" style={{ paddingTop: 48, paddingBottom: 48 }}>
           <SectionHead title="Listen" linkText="Radio & podcasts" to="/podcasts" />
           <div className="row" style={{ gap: 24 }}>
-            <div className="box box--ink stack" style={{ flex: '1 1 380px', minWidth: 0, gap: 18, padding: 28 }}>
+            <div data-edit="NOW_ON_RADIO" className="box box--ink stack" style={{ flex: '1 1 380px', minWidth: 0, gap: 18, padding: 28 }}>
               <span className="kicker kicker--amber">1313 RADIO · LIVE</span>
               <h3 className="headline" style={{ fontSize: 40, lineHeight: 1 }}>{NOW_ON_RADIO.title}</h3>
               <p className="muted-dark" style={{ fontSize: 15, lineHeight: 1.5 }}>News, traffic and music for the ride home. Stream it here or tune in on {FM}.</p>
@@ -173,7 +173,7 @@ function HomeBody({ feed }) {
       </section>
 
       {/* Sections */}
-      <section aria-label="News by section" className="container" style={{ paddingTop: 56, paddingBottom: 56 }}>
+      <section data-edit-articles="1" aria-label="News by section" className="container" style={{ paddingTop: 56, paddingBottom: 56 }}>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
           {sections.map((sec) => (
             <div key={sec.name} className="stack">

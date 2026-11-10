@@ -1,41 +1,18 @@
 {
   "name": "media1313-backend",
+  "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "version": "0.0.1",
+  "description": "MEDIA 1313 API + admin backend (plain Node.js, SQLite locally / MySQL in production)",
   "scripts": {
-    "astro": "astro",
-    "studiocms": "studiocms",
-    "migrate": "studiocms migrate --latest",
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "seed": "node --env-file=.env scripts/seed.mjs",
+    "dev": "node --watch --env-file=.env server.mjs",
     "start": "node server.cjs",
-    "postinstall": "patch-package"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.5",
-    "typescript": "^6.0.3"
+    "seed": "node --env-file=.env scripts/seed.mjs",
+    "create-admin": "node --env-file=.env scripts/create-admin.mjs"
   },
   "dependencies": {
-    "@astrojs/node": "^11.1.8",
-    "@effect/platform": "^0.97.2",
-    "@effect/platform-node": "^0.108.2",
     "@libsql/client": "^0.18.0",
-    "@studiocms/html": "^0.4.3",
-    "@studiocms/md": "^0.5.1",
-    "astro": "^7.4.0",
-    "effect": "^3.22.2",
-    "esbuild": "^0.28.2",
-    "mysql2": "^3.24.6",
-    "patch-package": "^8.0.1",
-    "sharp": "^0.35.5",
-    "studiocms": "^0.7.0"
+    "mysql2": "^3.24.6"
   },
-  "engines": {
-    "node": ">=22.23.4"
-  },
-  "overrides": {
-    "minimatch": "^11.0.5"
-  }
+  "engines": { "node": ">=20" }
 }

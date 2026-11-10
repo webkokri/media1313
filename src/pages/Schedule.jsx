@@ -19,7 +19,7 @@ function useWeek() {
 
 function Lineup({ title, color, liveLabel, tagStyle, linkText, rows, showNow, titleExtra }) {
   return (
-    <section aria-label={`${title} schedule`} style={{ flex: '1 1 480px', minWidth: 0, border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+    <section data-edit="SCHEDULE" aria-label={`${title} schedule`} style={{ flex: '1 1 480px', minWidth: 0, border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ background: color, color: '#fff', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 className="cond" style={{ fontWeight: 800, fontSize: 28 }}>{title} {titleExtra}</h2>
         <Link to="/live" style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{linkText}</Link>

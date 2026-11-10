@@ -9,7 +9,7 @@ export default function Sports() {
   const S = sport.toUpperCase();
 
   return (
-    <main>
+    <main data-edit="SPORTS">
       {/* Scores strip — feed from your sports data provider */}
       <div style={{ background: 'var(--night)', color: '#fff' }}>
         <div className="container" style={{ paddingTop: 14, paddingBottom: 14, display: 'flex', gap: 12, overflowX: 'auto' }}>

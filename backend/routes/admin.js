@@ -1,0 +1,161 @@
+import { all, one, run, uuid, now, getContent, setContent, logActivity } from '../lib/db.js';
+import { ok, fail, send, readJson, readBuffer, str, isEmail, clientIp } from '../lib/http.js';
+import { hashPassword, verifyPassword, adminCookie, currentAdmin } from '../lib/auth.js';
+import * as articles from '../lib/articles.js';
+import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
+
+// --- brute-force protection for the login form (per IP, in memory) ---
+const attempts = new Map();
+const tooMany = (ip) => { const a = attempts.get(ip); return a && a.n >= 8 && Date.now() - a.t < 15 * 60e3; };
+const miss = (ip) => { const a = attempts.get(ip); attempts.set(ip, a && Date.now() - a.t < 15 * 60e3 ? { n: a.n + 1, t: a.t } : { n: 1, t: Date.now() }); };
+
+export function adminRoutes(r) {
+  r.post('/api/admin/login', async (c) => {
+    const ip = clientIp(c.req);
+    if (tooMany(ip)) return fail(c.res, 429, 'Too many attempts. Try again in 15 minutes.');
+    const b = await readJson(c.req);
+    const a = await one('SELECT * FROM m1313_admins WHERE email = ?', [str(b.email, 255).toLowerCase()]);
+    if (!a || typeof b.password !== 'string' || !verifyPassword(b.password, a.password_hash)) { miss(ip); return fail(c.res, 401, 'Incorrect email or password.'); }
+    attempts.delete(ip);
+    await run('UPDATE m1313_admins SET last_login = ? WHERE id = ?', [now(), a.id]);
+    await logActivity(a.email, 'login', 'session');
+    ok(c.res, { admin: { id: a.id, email: a.email, name: a.name, role: a.role } }, { 'Set-Cookie': adminCookie(c.req, a) });
+  });
+  r.post('/api/admin/logout', async (c) => { ok(c.res, { ok: true }, { 'Set-Cookie': adminCookie(c.req, { id: '', password_hash: '' }, true) }); });
+
+  const A = (h, role) => async (c) => {
+    const admin = await currentAdmin(c.req);
+    if (!admin) return fail(c.res, 401, 'Please sign in.');
+    if (c.req.method !== 'GET' && c.req.headers['x-requested-with'] !== 'm1313') return fail(c.res, 403, 'Bad request origin.');
+    if (role === 'admin' && admin.role !== 'admin') return fail(c.res, 403, 'Only administrators can do this.');
+    c.admin = admin;
+    return h(c);
+  };
+  const get = (p, h, role) => r.get(p, A(h, role)), post = (p, h, role) => r.post(p, A(h, role)),
+    put = (p, h, role) => r.put(p, A(h, role)), del = (p, h, role) => r.del(p, A(h, role));
+  const log = (c, action, target) => logActivity(c.admin.email, action, target);
+
+  get('/api/admin/me', (c) => ok(c.res, { admin: { id: c.admin.id, email: c.admin.email, name: c.admin.name, role: c.admin.role } }));
+  put('/api/admin/me/password', async (c) => {
+    const b = await readJson(c.req);
+    if (!verifyPassword(String(b.current || ''), c.admin.password_hash)) return fail(c.res, 400, 'Current password is incorrect.');
+    if (String(b.next || '').length < 10) return fail(c.res, 400, 'New password must be at least 10 characters.');
+    await run('UPDATE m1313_admins SET password_hash = ? WHERE id = ?', [hashPassword(b.next), c.admin.id]);
+    await log(c, 'changed password', c.admin.email);
+    const updated = { ...c.admin, password_hash: (await one('SELECT password_hash FROM m1313_admins WHERE id = ?', [c.admin.id])).password_hash };
+    ok(c.res, { ok: true }, { 'Set-Cookie': adminCookie(c.req, updated) }); // keep this session signed in
+  });
+
+  // ---------- dashboard ----------
+  get('/api/admin/stats', async (c) => {
+    const n = async (t, w = '') => Number((await one(`SELECT COUNT(*) AS n FROM ${t} ${w}`)).n);
+    ok(c.res, {
+      articles: await n('m1313_articles'), published: await n('m1313_articles', "WHERE status = 'published'"),
+      leads: await n('m1313_contact_messages'), unread: await n('m1313_contact_messages', "WHERE status = 'new'"),
+      subscribers: await n('m1313_newsletter'), members: await n('m1313_members'), media: await n('m1313_media'), requests: await n('m1313_song_requests'),
+      recentLeads: await all('SELECT id, name, email, topic, message, status, created_at FROM m1313_contact_messages ORDER BY created_at DESC LIMIT 5'),
+      activity: await all('SELECT admin_email, action, target, created_at FROM m1313_activity ORDER BY created_at DESC LIMIT 10'),
+    });
+  });
+
+  // ---------- articles ----------
+  get('/api/admin/articles', async (c) => ok(c.res, { articles: await articles.adminList() }));
+  get('/api/admin/articles/:id', async (c) => { const a = await articles.adminGet(c.params.id); a ? ok(c.res, { article: a }) : fail(c.res, 404, 'Not found'); });
+  post('/api/admin/articles', async (c) => {
+    const b = await readJson(c.req); if (!b.author) b.author = c.admin.name;
+    const id = await articles.adminSave(b); await log(c, `created article (${b.status === 'published' ? 'published' : 'draft'})`, b.title);
+    ok(c.res, { article: await articles.adminGet(id) });
+  });
+  put('/api/admin/articles/:id', async (c) => {
+    const b = await readJson(c.req); await articles.adminSave(b, c.params.id); await log(c, 'updated article', b.title);
+    ok(c.res, { article: await articles.adminGet(c.params.id) });
+  });
+  post('/api/admin/articles/:id/status', async (c) => {
+    const b = await readJson(c.req); const s = b.status === 'published' ? 'published' : 'draft';
+    await articles.setStatus(c.params.id, s); const a = await articles.adminGet(c.params.id);
+    await log(c, s === 'published' ? 'published article' : 'unpublished article', a?.title); ok(c.res, { article: a });
+  });
+  del('/api/admin/articles/:id', async (c) => { const a = await articles.adminGet(c.params.id); await articles.adminDelete(c.params.id); await log(c, 'deleted article', a?.title); ok(c.res); });
+
+  // ---------- site content blocks (draft → publish) ----------
+  get('/api/admin/content', async (c) => {
+    const blocks = {};
+    for (const row of await getContent()) {
+      const value = JSON.parse(row.content_value); const draft = row.draft_value ? JSON.parse(row.draft_value) : null;
+      blocks[row.content_key] = { value, draft, hasDraft: draft !== null, updatedAt: row.updated_at };
+    }
+    ok(c.res, { blocks });
+  });
+  put('/api/admin/content/:key', async (c) => {
+    const key = c.params.key; const b = await readJson(c.req);
+    if (!(await one('SELECT content_key FROM m1313_content WHERE content_key = ?', [key]))) return fail(c.res, 404, 'Unknown content block.');
+    if (b.value === undefined) return fail(c.res, 400, 'Missing value.');
+    await setContent(key, b.value, { draft: !b.publish });
+    await log(c, b.publish ? 'published content' : 'saved draft of', key); ok(c.res);
+  });
+  post('/api/admin/content/:key/publish', async (c) => {
+    const row = await one('SELECT draft_value FROM m1313_content WHERE content_key = ?', [c.params.key]);
+    if (!row?.draft_value) return fail(c.res, 400, 'There is no draft to publish.');
+    await setContent(c.params.key, JSON.parse(row.draft_value)); await log(c, 'published content', c.params.key); ok(c.res);
+  });
+  del('/api/admin/content/:key/draft', async (c) => { await run('UPDATE m1313_content SET draft_value = NULL WHERE content_key = ?', [c.params.key]); await log(c, 'discarded draft of', c.params.key); ok(c.res); });
+  post('/api/admin/content-publish', async (c) => { // publish several drafts at once (live editor)
+    const keys = (await readJson(c.req)).keys; let n = 0;
+    for (const key of Array.isArray(keys) ? keys : []) {
+      const row = await one('SELECT draft_value FROM m1313_content WHERE content_key = ?', [String(key)]);
+      if (row?.draft_value) { await setContent(String(key), JSON.parse(row.draft_value)); n++; }
+    }
+    await log(c, 'published content', `${n} block(s) from live editor`); ok(c.res, { published: n });
+  });
+
+  // ---------- media library ----------
+  get('/api/admin/media', async (c) => ok(c.res, { media: await all('SELECT id, filename, url, mime, size_bytes, alt, created_at FROM m1313_media ORDER BY created_at DESC') }));
+  post('/api/admin/media', async (c) => {
+    const buf = await readBuffer(c.req, MAX_UPLOAD);
+    if (!buf.length) return fail(c.res, 400, 'No file received.');
+    const name = str(c.query.get('filename'), 200) || 'file';
+    const f = saveUpload(buf, name); const id = uuid();
+    await run('INSERT INTO m1313_media (id, filename, url, mime, size_bytes, alt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [id, name.slice(0, 255), f.url, f.mime, f.size, '', now()]);
+    await log(c, 'uploaded media', name); ok(c.res, { item: await one('SELECT * FROM m1313_media WHERE id = ?', [id]) });
+  });
+  put('/api/admin/media/:id', async (c) => { const b = await readJson(c.req); await run('UPDATE m1313_media SET alt = ?, filename = ? WHERE id = ?', [str(b.alt, 300), str(b.filename, 255) || 'file', c.params.id]); ok(c.res); });
+  del('/api/admin/media/:id', async (c) => {
+    const m = await one('SELECT filename, url FROM m1313_media WHERE id = ?', [c.params.id]);
+    if (m) { removeUpload(m.url.replace('/uploads/', '')); await run('DELETE FROM m1313_media WHERE id = ?', [c.params.id]); await log(c, 'deleted media', m.filename); }
+    ok(c.res);
+  });
+
+  // ---------- inboxes ----------
+  get('/api/admin/leads', async (c) => ok(c.res, { leads: await all('SELECT * FROM m1313_contact_messages ORDER BY created_at DESC') }));
+  put('/api/admin/leads/:id', async (c) => { const b = await readJson(c.req); await run('UPDATE m1313_contact_messages SET status = ? WHERE id = ?', [b.status === 'new' ? 'new' : 'read', c.params.id]); ok(c.res); });
+  del('/api/admin/leads/:id', async (c) => { await run('DELETE FROM m1313_contact_messages WHERE id = ?', [c.params.id]); await log(c, 'deleted enquiry', c.params.id); ok(c.res); });
+  get('/api/admin/subscribers', async (c) => ok(c.res, { subscribers: await all('SELECT * FROM m1313_newsletter ORDER BY created_at DESC') }));
+  del('/api/admin/subscribers/:id', async (c) => { await run('DELETE FROM m1313_newsletter WHERE id = ?', [c.params.id]); ok(c.res); });
+  get('/api/admin/song-requests', async (c) => ok(c.res, { requests: await all('SELECT * FROM m1313_song_requests ORDER BY created_at DESC') }));
+  del('/api/admin/song-requests/:id', async (c) => { await run('DELETE FROM m1313_song_requests WHERE id = ?', [c.params.id]); ok(c.res); });
+  get('/api/admin/members', async (c) => ok(c.res, { members: await all('SELECT id, name, email, wants_briefing, created_at FROM m1313_members ORDER BY created_at DESC') }));
+  del('/api/admin/members/:id', async (c) => { await run('DELETE FROM m1313_podcast_follows WHERE member_id = ?', [c.params.id]); await run('DELETE FROM m1313_members WHERE id = ?', [c.params.id]); await log(c, 'deleted member', c.params.id); ok(c.res); }, 'admin');
+  get('/api/admin/activity', async (c) => ok(c.res, { activity: await all('SELECT * FROM m1313_activity ORDER BY created_at DESC LIMIT 200') }));
+
+  // ---------- admin users (administrators only) ----------
+  get('/api/admin/users', async (c) => ok(c.res, { users: await all('SELECT id, email, name, role, created_at, last_login FROM m1313_admins ORDER BY created_at') }), 'admin');
+  post('/api/admin/users', async (c) => {
+    const b = await readJson(c.req); const email = str(b.email, 255).toLowerCase();
+    if (!isEmail(email) || !str(b.name, 200)) return fail(c.res, 400, 'Name and a valid email are required.');
+    if (String(b.password || '').length < 10) return fail(c.res, 400, 'Password must be at least 10 characters.');
+    if (await one('SELECT id FROM m1313_admins WHERE email = ?', [email])) return fail(c.res, 409, 'That email already has an account.');
+    await run('INSERT INTO m1313_admins (id, email, name, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)', [uuid(), email, str(b.name, 200), hashPassword(b.password), b.role === 'admin' ? 'admin' : 'editor', now()]);
+    await log(c, 'added user', email); ok(c.res);
+  }, 'admin');
+  put('/api/admin/users/:id', async (c) => {
+    const b = await readJson(c.req);
+    if (b.role) await run('UPDATE m1313_admins SET role = ? WHERE id = ?', [b.role === 'admin' ? 'admin' : 'editor', c.params.id]);
+    if (b.name) await run('UPDATE m1313_admins SET name = ? WHERE id = ?', [str(b.name, 200), c.params.id]);
+    if (b.password) { if (String(b.password).length < 10) return fail(c.res, 400, 'Password must be at least 10 characters.'); await run('UPDATE m1313_admins SET password_hash = ? WHERE id = ?', [hashPassword(b.password), c.params.id]); }
+    await log(c, 'updated user', c.params.id); ok(c.res);
+  }, 'admin');
+  del('/api/admin/users/:id', async (c) => {
+    if (c.params.id === c.admin.id) return fail(c.res, 400, 'You cannot delete your own account.');
+    await run('DELETE FROM m1313_admins WHERE id = ?', [c.params.id]); await log(c, 'deleted user', c.params.id); ok(c.res);
+  }, 'admin');
+}
