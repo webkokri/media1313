@@ -1,0 +1,787 @@
+{
+  "EPISODES": [
+    {
+      "show": "THE BRIEFING",
+      "title": "[Today’s episode title]",
+      "bg": "#B81B21"
+    },
+    {
+      "show": "GAME DAY",
+      "title": "Callers weigh in on the weekend",
+      "bg": "#0F5E48"
+    },
+    {
+      "show": "OFF AIR",
+      "title": "A day inside the 1313 newsroom",
+      "bg": "#1F3C88"
+    },
+    {
+      "show": "THE BRIEFING",
+      "title": "[Yesterday’s episode title]",
+      "bg": "#B81B21"
+    },
+    {
+      "show": "CITY TALK",
+      "title": "The transit plan, explained",
+      "bg": "#2A3550"
+    },
+    {
+      "show": "FEATURE HOUR",
+      "title": "Extended interview: [guest name]",
+      "bg": "#2E3A2A"
+    }
+  ],
+  "FM": "[FM 00.0]",
+  "FOOTER_COLS": [
+    {
+      "title": "News",
+      "links": [
+        {
+          "label": "Latest",
+          "to": "/news"
+        },
+        {
+          "label": "Local",
+          "to": "/news"
+        },
+        {
+          "label": "World",
+          "to": "/news"
+        },
+        {
+          "label": "Sports",
+          "to": "/sports"
+        }
+      ]
+    },
+    {
+      "title": "Watch",
+      "links": [
+        {
+          "label": "1313 TV Live",
+          "to": "/live"
+        },
+        {
+          "label": "TV shows",
+          "to": "/tv"
+        },
+        {
+          "label": "All shows",
+          "to": "/shows"
+        },
+        {
+          "label": "Schedule",
+          "to": "/schedule"
+        }
+      ]
+    },
+    {
+      "title": "Listen",
+      "links": [
+        {
+          "label": "1313 Radio Live",
+          "to": "/live"
+        },
+        {
+          "label": "Radio",
+          "to": "/radio"
+        },
+        {
+          "label": "Podcasts",
+          "to": "/podcasts"
+        },
+        {
+          "label": "Schedule",
+          "to": "/schedule"
+        }
+      ]
+    },
+    {
+      "title": "MEDIA 1313",
+      "links": [
+        {
+          "label": "About us",
+          "to": "/about"
+        },
+        {
+          "label": "Contact",
+          "to": "/about#contact"
+        },
+        {
+          "label": "Advertise",
+          "to": "/about#advertise"
+        },
+        {
+          "label": "Careers",
+          "to": "/about#careers"
+        }
+      ]
+    }
+  ],
+  "LIVE_UPDATES": [
+    "Council session begins; live coverage on 1313 TV and Radio",
+    "Traffic: delays reported on the main bridge heading north",
+    "Weather: evening showers expected across the region",
+    "Sports: weekend game times confirmed"
+  ],
+  "NAV": [
+    {
+      "label": "News",
+      "to": "/news"
+    },
+    {
+      "label": "TV",
+      "to": "/tv"
+    },
+    {
+      "label": "Radio",
+      "to": "/radio"
+    },
+    {
+      "label": "Shows",
+      "to": "/shows"
+    },
+    {
+      "label": "Podcasts",
+      "to": "/podcasts"
+    },
+    {
+      "label": "Schedule",
+      "to": "/schedule"
+    },
+    {
+      "label": "Sports",
+      "to": "/sports"
+    }
+  ],
+  "NEWS_CATEGORIES": [
+    "All",
+    "Local",
+    "World",
+    "Politics",
+    "Business",
+    "Tech",
+    "Health",
+    "Entertainment"
+  ],
+  "NOW_ON_RADIO": {
+    "title": "The Drive Home Show",
+    "time": "4:00 – 7:00 PM"
+  },
+  "NOW_ON_TV": {
+    "title": "The Evening Report",
+    "sub": "The day’s top stories, live from the 1313 newsroom",
+    "time": "6:00 – 7:00 PM"
+  },
+  "PODCASTS": [
+    {
+      "title": "The Briefing",
+      "desc": "Daily news in 15 minutes",
+      "bg": "#B81B21"
+    },
+    {
+      "title": "Off Air",
+      "desc": "Behind the scenes with 1313 hosts",
+      "bg": "#1F3C88"
+    },
+    {
+      "title": "Game Day",
+      "desc": "Sports talk from the Sports Desk team",
+      "bg": "#0F5E48"
+    },
+    {
+      "title": "City Talk",
+      "desc": "The TV show, as a podcast",
+      "bg": "#2A3550"
+    },
+    {
+      "title": "Feature Hour",
+      "desc": "Long-form interviews",
+      "bg": "#2E3A2A"
+    }
+  ],
+  "RADIO_HOSTS": [
+    {
+      "time": "5 – 10 AM",
+      "show": "Morning Drive"
+    },
+    {
+      "time": "10 AM – 1 PM",
+      "show": "Midday Mix"
+    },
+    {
+      "time": "1 – 4 PM",
+      "show": "The Afternoon Hour"
+    },
+    {
+      "time": "4 – 7 PM",
+      "show": "The Drive Home Show"
+    }
+  ],
+  "RADIO_UP_NEXT": [
+    {
+      "time": "7:00 PM",
+      "title": "Evening Mix",
+      "sub": "Music"
+    },
+    {
+      "time": "9:00 PM",
+      "title": "Call-In Hour",
+      "sub": "Talk"
+    },
+    {
+      "time": "11:00 PM",
+      "title": "Night Beats",
+      "sub": "Music"
+    }
+  ],
+  "SCHEDULE": {
+    "tvWeekday": [
+      [
+        "6:00 AM",
+        "Morning 1313",
+        "News & weather"
+      ],
+      [
+        "9:00 AM",
+        "City Talk",
+        "Current affairs"
+      ],
+      [
+        "12:00 PM",
+        "Midday News",
+        "News · Live"
+      ],
+      [
+        "1:00 PM",
+        "1313 Originals",
+        "Drama · Repeat"
+      ],
+      [
+        "4:00 PM",
+        "Kids Block",
+        "Family"
+      ],
+      [
+        "6:00 PM",
+        "The Evening Report",
+        "News · Live",
+        true
+      ],
+      [
+        "8:00 PM",
+        "Sports Desk",
+        "Highlights & analysis"
+      ],
+      [
+        "9:00 PM",
+        "Feature Hour",
+        "Documentary"
+      ],
+      [
+        "11:00 PM",
+        "Late Edition",
+        "News · Live"
+      ]
+    ],
+    "tvWeekend": [
+      [
+        "7:00 AM",
+        "Weekend Morning",
+        "News & weather"
+      ],
+      [
+        "10:00 AM",
+        "Kids Block",
+        "Family"
+      ],
+      [
+        "1:00 PM",
+        "Game Day Live",
+        "Sports"
+      ],
+      [
+        "5:00 PM",
+        "The Week in Review",
+        "News"
+      ],
+      [
+        "7:00 PM",
+        "Movie Night",
+        "Film"
+      ],
+      [
+        "10:00 PM",
+        "Late Edition",
+        "News · Live"
+      ]
+    ],
+    "radioWeekday": [
+      [
+        "5:00 AM",
+        "Morning Drive",
+        "News, traffic & music"
+      ],
+      [
+        "10:00 AM",
+        "Midday Mix",
+        "Music"
+      ],
+      [
+        "1:00 PM",
+        "The Afternoon Hour",
+        "Talk"
+      ],
+      [
+        "4:00 PM",
+        "The Drive Home Show",
+        "News, traffic & music",
+        true
+      ],
+      [
+        "7:00 PM",
+        "Evening Mix",
+        "Music"
+      ],
+      [
+        "9:00 PM",
+        "Call-In Hour",
+        "Talk"
+      ],
+      [
+        "10:00 PM",
+        "Newsroom Update",
+        "News"
+      ],
+      [
+        "11:00 PM",
+        "Night Beats",
+        "Music"
+      ]
+    ],
+    "radioWeekend": [
+      [
+        "6:00 AM",
+        "Weekend Wake-Up",
+        "Music & news"
+      ],
+      [
+        "10:00 AM",
+        "Game Day",
+        "Sports talk"
+      ],
+      [
+        "2:00 PM",
+        "Weekend Mix",
+        "Music"
+      ],
+      [
+        "6:00 PM",
+        "Community Hour",
+        "Talk"
+      ],
+      [
+        "8:00 PM",
+        "Party Mix",
+        "Music"
+      ],
+      [
+        "12:00 AM",
+        "Overnight",
+        "Music"
+      ]
+    ]
+  },
+  "SHOWS": [
+    {
+      "title": "The Evening Report",
+      "type": "TV",
+      "genre": "News",
+      "when": "Weeknights 6 PM",
+      "bg": "#7A1418"
+    },
+    {
+      "title": "City Talk",
+      "type": "TV",
+      "genre": "Current affairs",
+      "when": "Weekdays 9 AM",
+      "bg": "#2A3550"
+    },
+    {
+      "title": "Sports Desk",
+      "type": "TV",
+      "genre": "Sports",
+      "when": "Weeknights 8 PM",
+      "bg": "#0F4A3A"
+    },
+    {
+      "title": "Feature Hour",
+      "type": "TV",
+      "genre": "Documentary",
+      "when": "Weeknights 9 PM",
+      "bg": "#2E3A2A"
+    },
+    {
+      "title": "Late Edition",
+      "type": "TV",
+      "genre": "News",
+      "when": "Nightly 11 PM",
+      "bg": "#3A2A40"
+    },
+    {
+      "title": "Morning Drive",
+      "type": "RADIO",
+      "genre": "News, traffic & music",
+      "when": "Weekdays 5 AM",
+      "bg": "#8A5A00"
+    },
+    {
+      "title": "The Drive Home Show",
+      "type": "RADIO",
+      "genre": "News, traffic & music",
+      "when": "Weekdays 4 PM",
+      "bg": "#7A4A00"
+    },
+    {
+      "title": "Call-In Hour",
+      "type": "RADIO",
+      "genre": "Talk",
+      "when": "Weeknights 9 PM",
+      "bg": "#5E3A14"
+    },
+    {
+      "title": "Night Beats",
+      "type": "RADIO",
+      "genre": "Music",
+      "when": "Nightly 11 PM",
+      "bg": "#3A2A12"
+    },
+    {
+      "title": "The Briefing",
+      "type": "PODCAST",
+      "genre": "Daily news",
+      "when": "New episodes daily",
+      "bg": "#B81B21"
+    },
+    {
+      "title": "Off Air",
+      "type": "PODCAST",
+      "genre": "Behind the scenes",
+      "when": "Weekly",
+      "bg": "#1F3C88"
+    },
+    {
+      "title": "Game Day",
+      "type": "PODCAST",
+      "genre": "Sports talk",
+      "when": "Twice weekly",
+      "bg": "#0F5E48"
+    }
+  ],
+  "TV_ROWS": [
+    {
+      "title": "News & current affairs",
+      "items": [
+        [
+          "The Evening Report",
+          "Weeknights 6 PM",
+          "#7A1418"
+        ],
+        [
+          "City Talk",
+          "Weekdays 9 AM",
+          "#2A3550"
+        ],
+        [
+          "Late Edition",
+          "Nightly 11 PM",
+          "#3A2A40"
+        ],
+        [
+          "Week in Review",
+          "Saturdays 5 PM",
+          "#33302A"
+        ]
+      ]
+    },
+    {
+      "title": "1313 Originals",
+      "items": [
+        [
+          "[Drama title]",
+          "Drama · New season",
+          "#1F3C88"
+        ],
+        [
+          "[Comedy title]",
+          "Comedy",
+          "#5A3A12"
+        ],
+        [
+          "[Series title]",
+          "Limited series",
+          "#0F5E48"
+        ],
+        [
+          "[Show title]",
+          "Reality",
+          "#4A1F5E"
+        ]
+      ]
+    },
+    {
+      "title": "Sports",
+      "items": [
+        [
+          "Sports Desk",
+          "Weeknights 8 PM",
+          "#0F4A3A"
+        ],
+        [
+          "Game Day Live",
+          "Saturdays 1 PM",
+          "#14365E"
+        ],
+        [
+          "Top Plays",
+          "Clips",
+          "#3A3E47"
+        ],
+        [
+          "Local League",
+          "Highlights",
+          "#5E3A14"
+        ]
+      ]
+    },
+    {
+      "title": "Documentaries",
+      "items": [
+        [
+          "Feature Hour",
+          "Weeknights 9 PM",
+          "#2E3A2A"
+        ],
+        [
+          "[Doc title]",
+          "History",
+          "#3E2A2A"
+        ],
+        [
+          "[Doc title]",
+          "Nature",
+          "#1E4A4A"
+        ],
+        [
+          "[Doc title]",
+          "Community",
+          "#40352A"
+        ]
+      ]
+    }
+  ],
+  "TV_UP_NEXT": [
+    {
+      "time": "Now",
+      "title": "The Evening Report",
+      "sub": "News · Live",
+      "tag": "LIVE",
+      "tagColor": "#FF6B70"
+    },
+    {
+      "time": "7:00 PM",
+      "title": "City Talk",
+      "sub": "Current affairs"
+    },
+    {
+      "time": "8:00 PM",
+      "title": "Sports Desk",
+      "sub": "Highlights & analysis"
+    },
+    {
+      "time": "9:00 PM",
+      "title": "Feature Hour",
+      "sub": "Documentary",
+      "tag": "NEW",
+      "tagColor": "#F2A900"
+    },
+    {
+      "time": "10:00 PM",
+      "title": "Late Edition",
+      "sub": "News · Live"
+    }
+  ],
+  "VIDEOS": [
+    {
+      "show": "THE EVENING REPORT",
+      "title": "Tonight’s top stories in five minutes",
+      "dur": "5:12"
+    },
+    {
+      "show": "CITY TALK",
+      "title": "What the transit plan means for commuters",
+      "dur": "12:40"
+    },
+    {
+      "show": "SPORTS DESK",
+      "title": "Weekend preview: games to watch",
+      "dur": "8:05"
+    },
+    {
+      "show": "FEATURE HOUR",
+      "title": "Inside the neighbourhood rebuilding its main street",
+      "dur": "24:18"
+    }
+  ],
+  "SPORTS": {
+    "sports": [
+      "Hockey",
+      "Basketball",
+      "Football",
+      "Soccer",
+      "Baseball",
+      "Local"
+    ],
+    "scores": [
+      {
+        "status": "LIVE · [period]",
+        "color": "#FF6B70",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      },
+      {
+        "status": "FINAL",
+        "color": "#A9ADB6",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      },
+      {
+        "status": "FINAL",
+        "color": "#A9ADB6",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      },
+      {
+        "status": "TONIGHT · [time]",
+        "color": "#F2A900",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      },
+      {
+        "status": "TONIGHT · [time]",
+        "color": "#F2A900",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      },
+      {
+        "status": "TOMORROW",
+        "color": "#A9ADB6",
+        "a": "[Team A]",
+        "b": "[Team B]",
+        "sa": "[–]",
+        "sb": "[–]"
+      }
+    ],
+    "side": [
+      {
+        "tag": "ANALYSIS",
+        "title": "Three things to watch in this weekend’s games"
+      },
+      {
+        "tag": "LOCAL",
+        "title": "High school champions honoured at city hall"
+      },
+      {
+        "tag": "LISTEN",
+        "title": "Game Day: callers weigh in on the trade deadline"
+      }
+    ],
+    "clips": [
+      "Weekend preview: games to watch",
+      "Top plays of the week",
+      "Post-game: coach reacts",
+      "Local league roundup"
+    ],
+    "standings": [
+      {
+        "rank": 1,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      },
+      {
+        "rank": 2,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      },
+      {
+        "rank": 3,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      },
+      {
+        "rank": 4,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      },
+      {
+        "rank": 5,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      },
+      {
+        "rank": 6,
+        "team": "[Team name]",
+        "gp": "[–]",
+        "w": "[–]",
+        "l": "[–]",
+        "pts": "[–]"
+      }
+    ],
+    "lead": {
+      "title": "Home side heads into the weekend with playoff hopes alive",
+      "byline": "By [Reporter name] · [time]"
+    },
+    "sportsDesk": {
+      "kicker": "1313 TV · WEEKNIGHTS 8 PM",
+      "blurb": "Highlights and analysis every weeknight, plus Game Day talk on 1313 Radio."
+    }
+  },
+  "CONTACT_TOPICS": [
+    "News tip",
+    "TV feedback",
+    "Radio feedback",
+    "Advertising",
+    "Careers",
+    "Something else"
+  ],
+  "SITE": {
+    "breaking": "Breaking alert headline appears here — tap through to the developing story and live coverage",
+    "radioStreamUrl": "",
+    "fm": "[FM 00.0]"
+  }
+}
