@@ -67,4 +67,17 @@ Form submissions (newsletter, contact messages, song requests, members) are stor
 
 **Moving existing local data** (articles you already wrote in SQLite): the easiest route is to re-create them in the MySQL-backed dashboard. For a bulk copy, export the StudioCMS tables and `m1313_*` tables from `data/media1313.db` (`sqlite3 data/media1313.db .dump`, data rows only) and import them into MySQL after step 4.
 
-> The MySQL path (`DB_DIALECT=mysql`) uses plain portable SQL and StudioCMS's own MySQL support, but it has **not been run against a real MySQL server yet** — do a test deploy before launch.
+### MySQL compatibility patches (important)
+
+StudioCMS 0.7.0 does not work on MySQL/MariaDB out of the box, so this project ships two small
+[patch-package](https://github.com/ds300/patch-package) patches in `backend/patches/`. They are applied automatically by
+`npm install` (`postinstall`) — **do not delete the `patches/` folder or skip `npm install` on the server.**
+
+| Patch | Problem it fixes |
+|---|---|
+| `@withstudiocms/kysely` | `text` primary/foreign-key columns are rejected by MySQL (error 1170) → become `varchar(255)`; integer primary keys get `AUTO_INCREMENT` |
+| `@withstudiocms/sdk` | `WHERE id IN ()` (pages with no tags/categories) is a syntax error on MySQL |
+
+Tested against Hostinger's MariaDB 11.8: migrate, seed, article/home/content API, forms and member sign-up all work.
+**Not yet tested on MySQL:** creating and editing articles from the StudioCMS dashboard (needs an owner account).
+Re-check these patches when upgrading `studiocms`; they may no longer be needed.
