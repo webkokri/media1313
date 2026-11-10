@@ -1,6 +1,6 @@
 /* MEDIA 1313 Studio — dark admin theme */
 html.ad-root, html.ad-root body { background: #000; }
-.ad-shell, .ad-login, .ad-live { --bg: #000; --panel: #0a0a0b; --line: #232326; --line2: #2f2f34; --txt: #f4f4f5; --mut: #8b8b93; --red: #d21f26; --ok: #34d399; --warn: #f2a900;
+.ad-shell, .ad-login, .ad-live, .pbb { --bg: #000; --panel: #0a0a0b; --line: #232326; --line2: #2f2f34; --txt: #f4f4f5; --mut: #8b8b93; --red: #d21f26; --ok: #34d399; --warn: #f2a900;
   font-family: 'Inter', system-ui, sans-serif; color: var(--txt); background: var(--bg); min-height: 100vh; font-size: 14px; line-height: 1.45; }
 .ad-shell *, .ad-login *, .ad-live * { box-sizing: border-box; }
 .ad-shell a, .ad-login a, .ad-live a { color: inherit; text-decoration: none; }
@@ -185,3 +185,8 @@ small { color: var(--mut); display: block; margin-top: 4px; font-size: 12px; }
 .ctl-rep { display: flex; flex-direction: column; gap: 8px; } .ctl-repitem { border: 1px solid var(--pl); border-radius: 8px; background: var(--p2); } .ctl-repitem summary { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; cursor: pointer; list-style: none; } .ctl-repitem summary span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; } .ctl-repbtns { display: inline-flex; gap: 2px; } .ctl-repbtns button { width: 24px; height: 24px; border: 0; border-radius: 4px; background: transparent; color: #cbd5e1; cursor: pointer; } .ctl-repbody { padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 12px; }
 .ad-tplgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } .ad-tpl { text-align: left; padding: 14px; border: 1px solid var(--line2); border-radius: 10px; background: #0f0f11; color: var(--txt); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 6px; } .ad-tpl span { color: var(--mut); font-size: 12px; } .ad-tpl.on { border-color: #fff; background: #18181b; }
 @media (max-width: 900px) { .pbb-body { grid-template-columns: 1fr; } .pbb-panel { display: none; } .ad-tplgrid { grid-template-columns: 1fr; } }
+
+.ad-sub { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--mut); margin: 34px 0 12px; }
+
+.pbb-data { border: 1px solid var(--pl); border-radius: 8px; background: var(--p2); margin: 12px 0; } .pbb-data summary { padding: 10px 12px; cursor: pointer; font-weight: 600; } .pbb-databody { padding: 4px 12px 14px; }
+.pbb-databody .ad-input { background: #121214; } .pbb-databody .ad-field > label { color: var(--pm); } .pbb-databody .ad-card { background: #18181b; }

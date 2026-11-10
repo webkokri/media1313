@@ -16,6 +16,7 @@ import About from './pages/About.jsx';
 import SignIn from './pages/SignIn.jsx';
 import BuilderPage, { NotFound } from './builder/BuilderPage.jsx';
 import { useContent } from './content.jsx';
+import EditBar from './builder/EditBar.jsx';
 
 const CanvasEditor = lazy(() => import('./builder/CanvasEditor.jsx'));
 // The page builder (admin) loads this site inside an iframe at /__pb to edit pages visually.
@@ -41,7 +42,7 @@ export default function App() {
   if (pathname === '/__pb' && inBuilderFrame) return <Suspense fallback={null}><CanvasEditor /></Suspense>;
   // A published builder page replaces the built-in page at the same address ("home" = "/").
   const slug = pathname === '/' ? 'home' : pathname.replace(/^\/|\/$/g, '');
-  if (_pages.includes(slug)) return <><ScrollManager /><BuilderPage slug={slug} /></>;
+  if (_pages.includes(slug)) return <><ScrollManager /><BuilderPage slug={slug} /><EditBar /></>;
   const dark = DARK_PAGES.includes(pathname);
   return (
     <div className={dark ? 'app app--dark' : 'app'}>
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
+      <EditBar />
     </div>
   );
 }

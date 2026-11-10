@@ -183,3 +183,30 @@ export const PAGE_TEMPLATES = {
 /* human labels for the navigator */
 export const labelOf = (n) => (n.type === 'section' ? 'Section' : n.type === 'column' ? 'Column' : WIDGETS[n.type]?.label || n.type);
 export const previewText = (n) => { const s = n.s || {}; const v = s.text || s.title || s.heading || s.html || s.quote || s.number || ''; return String(v).replace(/<[^>]+>/g, '').slice(0, 28); };
+
+/* Starting points for the site's built-in pages, so any of them can be opened in the builder ("Edit with page builder").
+   They use live-data widgets, so the content keeps following your site content until you change it. */
+const heroSec = (title, sub, extra = {}) => sec([100], { pt: 0, pb: 0, layout: 'full' }, [newWidget('hero', { eyebrow: 'MEDIA 1313', title, subtitle: sub, minHeight: 320, titleSize: 64, btn1Text: '', btn2Text: '', ...extra })]);
+const titleSec = (t, sub) => sec([100], { pt: 48, pb: 8 }, [newWidget('heading', { text: t, size: 56, font: 'cond' }), ...(sub ? [newWidget('text', { html: `<p>${sub}</p>`, color: '#3d4047' })] : [])]);
+export const BUILTIN_PAGES = {
+  home: { title: 'Home', build: () => PAGE_TEMPLATES.home.build() },
+  news: { title: 'News', build: () => ({ sections: [titleSec('News'), sec([100], { pt: 16 }, [newWidget('articles', { heading: '', count: 12, columns: 3, showExcerpt: true, linkText: '' })]), TEMPLATES.newsletter.build()] }) },
+  tv: { title: 'TV', build: () => ({ sections: [heroSec('1313 TV', 'News, originals, sports and documentaries — live and on demand.', { btn1Text: 'Watch live', btn1Link: '/live' }), TEMPLATES.live.build(), sec([100], {}, [newWidget('heading', { text: 'TV shows', size: 36 }), newWidget('shows', { type: 'TV' })]), sec([100], { pt: 0 }, [newWidget('heading', { text: 'Watch', size: 36 }), newWidget('videos')])] }) },
+  radio: { title: 'Radio', build: () => ({ sections: [heroSec('1313 Radio', 'News, talk and music, around the clock.', { btn1Text: 'Listen live', btn1Link: '/live' }), sec([50, 50], {}, [newWidget('heading', { text: 'On air now', size: 36 }), newWidget('onair', { channel: 'radio' })], [newWidget('heading', { text: 'Today on radio', size: 36 }), newWidget('schedule', { channel: 'radio' })]), sec([100], {}, [newWidget('heading', { text: 'Radio shows', size: 36 }), newWidget('shows', { type: 'RADIO' })])] }) },
+  shows: { title: 'Shows', build: () => ({ sections: [titleSec('Shows', 'Every program on 1313 TV, 1313 Radio and our podcasts.'), sec([100], { pt: 16 }, [newWidget('shows', { type: 'All', columns: 4 })])] }) },
+  podcasts: { title: 'Podcasts', build: () => ({ sections: [titleSec('Podcasts'), sec([100], { pt: 16 }, [newWidget('podcasts', { count: 12, columns: 3 })]), TEMPLATES.newsletter.build()] }) },
+  schedule: { title: 'Schedule', build: () => ({ sections: [titleSec('Schedule', 'What’s on 1313 TV and 1313 Radio.'), sec([50, 50], { pt: 16 }, [newWidget('heading', { text: 'TV', size: 32 }), newWidget('schedule', { channel: 'tv', rows: 12 })], [newWidget('heading', { text: 'Radio', size: 32 }), newWidget('schedule', { channel: 'radio', rows: 12 })])] }) },
+  sports: { title: 'Sports', build: () => ({ sections: [titleSec('Sports'), sec([100], { pt: 16 }, [newWidget('articles', { heading: 'Latest', count: 6, linkText: '' })]), sec([100], {}, [newWidget('heading', { text: 'Highlights', size: 36 }), newWidget('videos')])] }) },
+  live: { title: 'Live', build: () => ({ sections: [sec([66.67, 33.33], { bg: '#0e1014', pt: 32, pb: 48 }, [newWidget('player')], [newWidget('onair', { channel: 'tv' }), newWidget('schedule', { channel: 'tv', rows: 6 })])] }) },
+  about: { title: 'About', build: () => ({ sections: [heroSec('One newsroom. TV, radio and news in one place.', '[Mission statement: who MEDIA 1313 serves and what it stands for.]'), TEMPLATES.features.build(), sec([100], { pt: 32 }, [newWidget('heading', { text: 'Contact the newsroom', size: 40 }), newWidget('contact')])] }) },
+};
+
+/** Site-content blocks that feed a widget (editable right inside the builder under "Data for this widget"). */
+export const WIDGET_DATA = {
+  ticker: ['SITE'], player: ['PLAYER'], schedule: ['SCHEDULE'], shows: ['SHOWS'], podcasts: ['PODCASTS'], videos: ['VIDEOS'],
+  onair: (s) => (s.channel === 'radio' ? ['NOW_ON_RADIO', 'RADIO_UP_NEXT'] : ['NOW_ON_TV', 'TV_UP_NEXT']),
+  contact: ['CONTACT_TOPICS'],
+};
+export const dataKeysOf = (node) => { const d = WIDGET_DATA[node?.type]; return typeof d === 'function' ? d(node.s) : d || []; };
+/** Clicking the site header / footer in the canvas opens these blocks. */
+export const CHROME_BLOCKS = { NAV: ['NAV', 'CHROME'], CHROME: ['CHROME', 'NAV'], FOOTER_COLS: ['FOOTER_COLS', 'CHROME'], SITE: ['SITE'] };

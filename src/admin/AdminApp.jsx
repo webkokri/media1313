@@ -31,7 +31,7 @@ function Login({ onIn }) {
   const [busy, setBusy] = useState(false);
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setErr('');
-    try { const { admin } = await adminApi.post('/login', f); onIn(admin); } catch (x) { setErr(x.message); setBusy(false); }
+    try { const { admin } = await adminApi.post('/login', f); try { localStorage.setItem('m1313_admin', '1'); } catch { /* ignore */ } onIn(admin); } catch (x) { setErr(x.message); setBusy(false); }
   };
   return (
     <div className="ad-login">
@@ -84,10 +84,10 @@ function Shell() {
   const [admin, setAdmin] = useState(undefined); // undefined = checking, null = signed out
   const nav = useNavigate();
   const loc = useLocation();
-  useEffect(() => { adminApi.get('/me').then((d) => setAdmin(d.admin)).catch(() => setAdmin(null)); }, []);
+  useEffect(() => { adminApi.get('/me').then((d) => { setAdmin(d.admin); try { localStorage.setItem('m1313_admin', '1'); } catch { /* ignore */ } }).catch(() => setAdmin(null)); }, []);
   useEffect(() => { const h = () => setAdmin(null); window.addEventListener('m1313:signed-out', h); return () => window.removeEventListener('m1313:signed-out', h); }, []);
   useEffect(() => { document.title = 'Studio — MEDIA 1313'; document.documentElement.classList.add('ad-root'); return () => document.documentElement.classList.remove('ad-root'); }, []);
-  const out = async () => { await adminApi.post('/logout').catch(() => {}); setAdmin(null); nav('/admin/login'); };
+  const out = async () => { await adminApi.post('/logout').catch(() => {}); try { localStorage.removeItem('m1313_admin'); } catch { /* ignore */ } setAdmin(null); nav('/admin/login'); };
 
   if (admin === undefined) return <div className="ad-login"><p className="ad-muted">Loading…</p></div>;
   if (!admin) return loc.pathname === '/admin/login' ? <Login onIn={(a) => { setAdmin(a); nav('/admin'); }} /> : <Navigate to="/admin/login" replace />;

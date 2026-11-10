@@ -27,6 +27,7 @@ export const adminApi = {
 export const BLOCKS = {
   SITE: { label: 'Banner & radio stream', group: 'Site', page: '/', desc: 'Breaking-news ticker, radio stream URL, FM label.' },
   FM: { label: 'Radio frequency', group: 'Site', page: '/radio', desc: 'The FM label shown across the site.' },
+  CHROME: { label: 'Header & footer text', group: 'Site', page: '/', desc: 'Top bar links, the Watch & Listen button, footer tagline, legal links and copyright.' },
   NAV: { label: 'Header menu', group: 'Site', page: '/', desc: 'Links in the main navigation.' },
   FOOTER_COLS: { label: 'Footer links', group: 'Site', page: '/', desc: 'The four link columns in the footer.' },
   NEWS_CATEGORIES: { label: 'News categories', group: 'Site', page: '/news', desc: 'Category tabs on the News page and choices in the article editor.' },

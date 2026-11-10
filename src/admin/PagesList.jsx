@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { adminApi, ago } from './adminApi.js';
 import { Badge, confirmAction, Empty, Page, Status, useLoad, useToast } from './ui.jsx';
-import { PAGE_TEMPLATES } from '../builder/schema.js';
+import { BUILTIN_PAGES, PAGE_TEMPLATES } from '../builder/schema.js';
 
 const BUILT_IN = { home: 'Home', news: 'News', tv: 'TV', radio: 'Radio', shows: 'Shows', podcasts: 'Podcasts', schedule: 'Schedule', sports: 'Sports', live: 'Live', about: 'About' };
 
@@ -34,6 +34,11 @@ export default function PagesList() {
   const s = useLoad(() => adminApi.get('/pages'));
   const toast = useToast(); const nav = useNavigate();
   const [creating, setCreating] = useState(false);
+  const taken = new Set((s.data?.pages || []).map((p) => p.slug));
+  const customize = async (slug) => {
+    try { const b = BUILTIN_PAGES[slug]; const { page } = await adminApi.post('/pages', { title: b.title, slug, tree: b.build() }); nav(`/admin/builder/${page.id}`); }
+    catch (e) { toast(e.message, 'error'); }
+  };
   const act = async (fn, msg) => { try { await fn(); if (msg) toast(msg); s.reload(); } catch (e) { toast(e.message, 'error'); } };
   return (
     <Page title="Pages" sub="Design pages with the visual page builder. A published page replaces the built-in page at the same address — name one “home” to rebuild the homepage."
@@ -59,6 +64,20 @@ export default function PagesList() {
             {s.data && s.data.pages.length === 0 && <tr><td colSpan="5"><Empty>No pages yet. Create one to try the page builder.</Empty></td></tr>}
           </tbody></table>
       </section>
+      <h2 className="ad-sub">Built-in pages</h2>
+      <p className="ad-muted" style={{ margin: '-6px 0 12px' }}>The pages that ship with the site. Customize one to open it in the page builder, pre-filled with the same live content. Nothing changes on the site until you publish.</p>
+      <div className="ad-cardsgrid">
+        {Object.entries(BUILTIN_PAGES).map(([slug, b]) => (
+          <div key={slug} className="ad-tile" style={{ cursor: 'default' }}>
+            <div><strong>{b.title}</strong>{taken.has(slug) ? <Badge kind="ok">customized</Badge> : <Badge kind="muted">built-in</Badge>}</div>
+            <p className="ad-mono">{slug === 'home' ? '/' : `/${slug}`}</p>
+            <div className="ad-btnrow">{taken.has(slug)
+              ? <Link className="ad-btn sm" to={`/admin/builder/${(s.data?.pages || []).find((p) => p.slug === slug)?.id}`}>Edit with builder</Link>
+              : <button className="ad-btn sm ad-primary" onClick={() => customize(slug)}>Customize with builder</button>}
+              <a className="ad-btn sm ghost" href={slug === 'home' ? '/' : `/${slug}`} target="_blank" rel="noreferrer">View</a></div>
+          </div>
+        ))}
+      </div>
       {creating && <NewPage onClose={() => setCreating(false)} />}
     </Page>
   );

@@ -44,9 +44,9 @@ export default function CanvasEditor() {
   }, []);
 
   const measure = useCallback(() => {
-    const q = (id) => (id ? document.querySelector(`[data-pb-id="${id}"]`) : null);
+    const q = (id) => (id ? (id.startsWith('block:') ? document.querySelector(`[data-edit="${id.slice(6)}"]`) : document.querySelector(`[data-pb-id="${id}"]`)) : null);
     const hv = hover && hover !== selRef.current ? q(hover) : null; const sl = q(selRef.current);
-    setBox({ hover: hv ? { ...rectOf(hv), kind: kindOf(hv), label: labelOf({ type: hv.getAttribute('data-pb-type') }) } : null, sel: sl ? { ...rectOf(sl), kind: kindOf(sl), label: labelOf({ type: sl.getAttribute('data-pb-type') }) } : null });
+    setBox({ hover: hv ? { ...rectOf(hv), kind: hover.startsWith('block:') ? 'section' : kindOf(hv), label: hover.startsWith('block:') ? `Site content: ${hover.slice(6).replace(/_/g, ' ').toLowerCase()}` : labelOf({ type: hv.getAttribute('data-pb-type') }) } : null, sel: sl ? { ...rectOf(sl), kind: kindOf(sl), label: labelOf({ type: sl.getAttribute('data-pb-type') }) } : null });
   }, [hover]);
   useLayoutEffect(() => { measure(); }, [st, hover, editing, measure]);
   useEffect(() => {
@@ -81,11 +81,14 @@ export default function CanvasEditor() {
   /* ---- pointer + keyboard ---- */
   useEffect(() => {
     const idAt = (t) => t?.closest?.('[data-pb-id]')?.getAttribute('data-pb-id') || null;
-    const move = (e) => { if (!editRef.current) setHover(idAt(e.target)); };
+    const blockAt = (t) => (t?.closest?.('[data-pb-id]') ? null : t?.closest?.('[data-edit]')?.getAttribute('data-edit') || null);   // site header / footer
+    const move = (e) => { if (!editRef.current) { const b = blockAt(e.target); setHover(b ? `block:${b}` : idAt(e.target)); } };
     const click = (e) => {
       if (e.target.closest('.pbx')) return;                       // our own overlay buttons
       if (editRef.current) { if (editRef.current.el.contains(e.target)) return; finishEdit(); }
       e.preventDefault(); e.stopPropagation();
+      const blk = blockAt(e.target);
+      if (blk) { post({ type: 'pb:block', key: blk }); return; }
       const id = idAt(e.target);
       // clicking text inside the already-selected widget starts typing there
       const ed = e.target.closest('[data-pb-edit]');
@@ -141,14 +144,14 @@ export default function CanvasEditor() {
 
   return (
     <div className="app pb-canvas-root">
-      {!bare && <div style={{ pointerEvents: 'none' }}><Header /></div>}
+      {!bare && <Header />}
       <main><PageRender tree={st.tree} editor /></main>
       <div className="pbx pbx-add">
         <p>{st.tree.sections.length ? 'Add a new section' : 'Start building your page'}</p>
         <StructurePicker onPick={(widths) => post({ type: 'pb:addSection', widths })} />
         <small>Choose a structure, then drag widgets from the left. You can also drag a widget straight onto the page.</small>
       </div>
-      {!bare && <div style={{ pointerEvents: 'none' }}><Footer /></div>}
+      {!bare && <Footer />}
 
       <div className="pbx pbx-layer" aria-hidden="false">
         {box.hover && <div className="pbx-box hover" style={{ ...box.hover, borderColor: COLORS[box.hover.kind] }}><span style={{ background: COLORS[box.hover.kind] }}>{box.hover.label}</span></div>}

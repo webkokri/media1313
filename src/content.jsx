@@ -7,9 +7,18 @@ const ContentContext = createContext(null);
 
 // The admin's visual editor loads this site inside an iframe. In that case we load DRAFT content,
 // accept live changes from the editor, and let editors click regions to select them.
-const inEditor = (() => {
-  try { return window.parent !== window && window.parent.location.pathname.startsWith('/admin/live-edit'); } catch { return false; }
-})();
+const parentPath = (() => { try { return window.parent !== window ? window.parent.location.pathname : ''; } catch { return ''; } })();
+const inEditor = parentPath.startsWith('/admin/live-edit');
+const inBuilder = parentPath.startsWith('/admin/builder');   // the page builder preview: shows drafts + live edits of site content
+
+// Builder preview: receives the working copy of site content (menus, footer, shows…) while you type.
+function BuilderBridge({ onContent }) {
+  useEffect(() => {
+    const h = (e) => { if (e.origin === window.location.origin && e.data?.type === 'm1313:content') onContent(e.data.content); };
+    window.addEventListener('message', h); return () => window.removeEventListener('message', h);
+  }, [onContent]);
+  return null;
+}
 
 function EditorBridge({ onContent }) {
   const { pathname } = useLocation();
@@ -42,17 +51,18 @@ function EditorBridge({ onContent }) {
 }
 
 export function ContentProvider({ children }) {
-  const state = useApi(inEditor ? '/admin/content' : '/content');
+  const state = useApi(inEditor || inBuilder ? '/admin/content' : '/content');
   const [override, setOverride] = useState(null);
   if (state.error) return <div style={{ padding: 48, fontFamily: 'sans-serif' }}><h1>MEDIA 1313</h1><p>We can’t load the site right now. Please refresh in a moment.</p></div>;
   if (!state.data) return <div style={{ padding: 48, fontFamily: 'sans-serif' }} aria-live="polite">Loading…</div>;
   let content = state.data;
-  if (inEditor) { // /admin/content returns { blocks: { KEY: { value, draft } } } — show drafts
+  if (inEditor || inBuilder) { // /admin/content returns { blocks: { KEY: { value, draft } } } — show drafts
     content = Object.fromEntries(Object.entries(state.data.blocks).map(([k, b]) => [k, b.hasDraft ? b.draft : b.value]));
   }
   return (
     <ContentContext.Provider value={override || content}>
       {inEditor && <EditorBridge onContent={setOverride} />}
+      {inBuilder && <BuilderBridge onContent={setOverride} />}
       {children}
     </ContentContext.Provider>
   );

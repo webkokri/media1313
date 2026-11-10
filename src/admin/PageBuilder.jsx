@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from './adminApi.js';
 import { useLoad, useToast, confirmAction } from './ui.jsx';
 import Controls from './controls.jsx';
-import { COMMON_ADVANCED, STRUCTURES, TEMPLATES, WIDGETS, WIDGET_CATS, duplicateNode, find, insertNode, labelOf, moveNode, newColumn, newSection, newWidget, patchSettings, previewText, removeNode, settingsSpec, withNewIds } from '../builder/schema.js';
+import FormEditor from './FormEditor.jsx';
+import { blockInfo } from './adminApi.js';
+import { CHROME_BLOCKS, COMMON_ADVANCED, STRUCTURES, dataKeysOf, TEMPLATES, WIDGETS, WIDGET_CATS, duplicateNode, find, insertNode, labelOf, moveNode, newColumn, newSection, newWidget, patchSettings, previewText, removeNode, settingsSpec, withNewIds } from '../builder/schema.js';
 
 const DEVICES = [['desktop', '100%', 'Desktop', 'M3 4h18v12H3zM8 20h8M12 16v4'], ['tablet', '820px', 'Tablet', 'M6 2h12v20H6zM11 18h2'], ['mobile', '390px', 'Mobile', 'M8 2h8v20H8zM11 18h2']];
 const Ico = ({ d }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
@@ -52,6 +54,12 @@ export default function PageBuilder() {
   const [busy, setBusy] = useState(false);
   const [, force] = useState(0);
   const hist = useRef({ stack: [], i: -1, key: null, at: 0 });
+  // Site content (menus, footer, shows, schedule, player link…) edited from inside the builder, saved as drafts alongside the page
+  const [blocks, setBlocks] = useState(null);
+  const [savedBlocks, setSavedBlocks] = useState({});
+  const [touched, setTouched] = useState([]);
+  const [blockSel, setBlockSel] = useState(null);   // keys opened by clicking the site header/footer
+  const blocksRef = useRef(null); blocksRef.current = blocks;
   const treeRef = useRef(null); treeRef.current = tree;
   const selRef = useRef(null); selRef.current = selected;
 
@@ -62,7 +70,16 @@ export default function PageBuilder() {
     setSaved(JSON.stringify({ t: p.title, s: p.slug, tree: p.tree, st: p.settings }));
   }, [server.data]);
 
-  const dirty = tree && meta && JSON.stringify({ t: meta.title, s: meta.slug, tree, st: meta.settings }) !== saved;
+  useEffect(() => {
+    const b = content.data?.blocks; if (!b) return;
+    const cur = Object.fromEntries(Object.entries(b).map(([k, x]) => [k, x.hasDraft ? x.draft : x.value]));
+    setBlocks(cur); setSavedBlocks(cur);
+  }, [content.data]);
+  const dirtyBlocks = blocks ? Object.keys(blocks).filter((k) => JSON.stringify(blocks[k]) !== JSON.stringify(savedBlocks[k])) : [];
+  const editBlock = (key, value) => { setBlocks((b) => ({ ...b, [key]: value })); setTouched((t) => (t.includes(key) ? t : [...t, key])); };
+
+  const dirty = (tree && meta && JSON.stringify({ t: meta.title, s: meta.slug, tree, st: meta.settings }) !== saved) || dirtyBlocks.length > 0;
+  const dirtyPage = tree && meta && JSON.stringify({ t: meta.title, s: meta.slug, tree, st: meta.settings }) !== saved;
   useEffect(() => { if (!dirty) return undefined; const h = (e) => { e.preventDefault(); e.returnValue = ''; }; window.addEventListener('beforeunload', h); return () => window.removeEventListener('beforeunload', h); }, [dirty]);
 
   /* ---- history ---- */
@@ -76,11 +93,16 @@ export default function PageBuilder() {
   const canUndo = hist.current.i > 0, canRedo = hist.current.i < hist.current.stack.length - 1;
 
   /* ---- keeping the preview frame in sync ---- */
-  const push = useCallback(() => { frame.current?.contentWindow?.postMessage({ type: 'pb:state', tree: treeRef.current, selectedId: selRef.current, settings: meta?.settings }, window.location.origin); }, [meta?.settings]);
+  const push = useCallback(() => {
+    const w = frame.current?.contentWindow; if (!w) return;
+    w.postMessage({ type: 'pb:state', tree: treeRef.current, selectedId: selRef.current, settings: meta?.settings }, window.location.origin);
+    if (blocksRef.current) w.postMessage({ type: 'm1313:content', content: blocksRef.current }, window.location.origin);
+  }, [meta?.settings]);
+  useEffect(() => { if (blocks) frame.current?.contentWindow?.postMessage({ type: 'm1313:content', content: blocks }, window.location.origin); }, [blocks]);
   useEffect(() => { if (tree) push(); }, [tree, selected, push]);
 
   /* ---- actions ---- */
-  const select = (nid) => { setSelected(nid); if (nid) { setMode('settings'); setTab('content'); } else setMode((m) => (m === 'settings' ? 'elements' : m)); };
+  const select = (nid) => { setBlockSel(null); setSelected(nid); if (nid) { setMode('settings'); setTab('content'); } else setMode((m) => (m === 'settings' ? 'elements' : m)); };
   const act = useCallback((action, nid) => {
     const t = treeRef.current; const f = find(t, nid); if (!f) return;
     if (action === 'delete') { if (f.kind === 'section' && f.node.cols.some((c) => c.widgets.length) && !confirmAction('Delete this section and everything in it?')) return; change(removeNode(t, nid)); setSelected(null); setMode('elements'); }
@@ -134,7 +156,8 @@ export default function PageBuilder() {
       if (e.origin !== window.location.origin || e.data?.source !== 'pb') return;
       const d = e.data;
       if (d.type === 'pb:ready') push();
-      else if (d.type === 'pb:select') select(d.id);
+      else if (d.type === 'pb:select') { setBlockSel(null); select(d.id); }
+      else if (d.type === 'pb:block') { setSelected(null); setBlockSel(CHROME_BLOCKS[d.key] || [d.key]); setMode('blocks'); }
       else if (d.type === 'pb:update') { const keys = Object.keys(d.patch); change(patchSettings(treeRef.current, d.id, d.patch), `${d.id}:${keys[0]}`); }
       else if (d.type === 'pb:drop') applyDrop(d.drag, d.drop);
       else if (d.type === 'pb:addSection') addSection(d.widths);
@@ -158,7 +181,9 @@ export default function PageBuilder() {
     try {
       const body = { title: meta.title, slug: meta.slug, tree, settings: meta.settings };
       let { page } = await adminApi.put(`/pages/${id}`, body);
-      if (publish) ({ page } = await adminApi.post(`/pages/${id}/publish`));
+      for (const k of dirtyBlocks) await adminApi.put(`/content/${k}`, { value: blocks[k] });           // site content → drafts
+      if (publish) { ({ page } = await adminApi.post(`/pages/${id}/publish`)); if (touched.length) await adminApi.post('/content-publish', { keys: touched }); }
+      setSavedBlocks({ ...blocks }); if (publish) setTouched([]);
       setMeta((m) => ({ ...m, slug: page.slug, status: page.status, hasDraft: page.hasDraft }));
       setSaved(JSON.stringify({ t: meta.title, s: page.slug, tree, st: meta.settings }));
       toast(publish ? 'Published — live on the site' : 'Draft saved');
@@ -190,7 +215,7 @@ export default function PageBuilder() {
           <button className="pbb-icon" disabled={!canRedo} onClick={() => jump(1)} title="Redo" aria-label="Redo"><Ico d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3" /></button>
           {live && <a className="pbb-btn" href={pageUrl} target="_blank" rel="noreferrer">View page</a>}
           <button className="pbb-btn" disabled={busy || !dirty} onClick={() => persist(false)}>Save draft</button>
-          <button className="pbb-btn pbb-primary" disabled={busy || (!dirty && live && !meta.hasDraft)} onClick={() => persist(true)}>{live ? 'Update' : 'Publish'}</button>
+          <button className="pbb-btn pbb-primary" disabled={busy || (!dirty && live && !meta.hasDraft && touched.length === 0)} onClick={() => persist(true)}>{live ? 'Update' : 'Publish'}</button>
         </div>
       </header>
       <div className="pbb-body">
@@ -226,6 +251,15 @@ export default function PageBuilder() {
                 {live && <button className="pbb-btn danger wide" onClick={unpublish}>Unpublish this page</button>}
               </div>
             )}
+            {mode === 'blocks' && blockSel && blocks && (
+              <>
+                <div className="pbb-sethead"><button className="pbb-icon" onClick={() => { setBlockSel(null); setMode('elements'); }} title="Back to elements" aria-label="Back to elements"><Ico d="M15 18l-6-6 6-6" /></button><strong>Edit site content</strong></div>
+                <p className="pbb-note">These parts are shared by every page. Changes preview here and go live when you press Publish.</p>
+                {blockSel.filter((k) => k in blocks).map((k) => (
+                  <details key={k} className="pbb-data" open={k === blockSel[0]}><summary>{blockInfo(k).label}</summary><div className="pbb-databody"><FormEditor value={blocks[k]} onChange={(v) => editBlock(k, v)} k={k} /></div></details>
+                ))}
+              </>
+            )}
             {mode === 'settings' && node && (
               <>
                 <div className="pbb-sethead"><button className="pbb-icon" onClick={() => setMode('elements')} title="Back to elements" aria-label="Back to elements"><Ico d="M15 18l-6-6 6-6" /></button><strong>Edit {spec.label}</strong></div>
@@ -233,6 +267,10 @@ export default function PageBuilder() {
                 {spec.note && tab === 'content' && <p className="pbb-note">{spec.note}</p>}
                 {spec[tab].length === 0 && <p className="pbb-muted pad">Nothing to set here.</p>}
                 <Controls spec={spec[tab]} s={node.s} device={device} ctx={{ categories }} onSet={(patch) => change(patchSettings(tree, node.id, patch), `${node.id}:${Object.keys(patch)[0]}`)} />
+                {tab === 'content' && blocks && dataKeysOf(node).filter((k) => k in blocks).map((k) => (
+                  <details key={k} className="pbb-data"><summary>Data for this widget: {blockInfo(k).label}</summary><div className="pbb-databody"><FormEditor value={blocks[k]} onChange={(v) => editBlock(k, v)} k={k} /></div></details>
+                ))}
+                {tab === 'content' && node.type === 'articles' && <p className="pbb-note">Articles are written under <b>Admin → Articles</b>; this widget lists them automatically.</p>}
                 {device !== 'desktop' && <p className="pbb-note">Editing for <b>{device}</b>: controls marked with a device icon only change this screen size.</p>}
               </>
             )}

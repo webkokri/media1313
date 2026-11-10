@@ -789,5 +789,43 @@
     "streamUrl": "",
     "poster": "",
     "autoplay": false
+  },
+  "CHROME": {
+    "tvLive": "1313 TV live now",
+    "radioLive": "1313 Radio on air",
+    "utilityLinks": [
+      {
+        "label": "Newsletters",
+        "to": "/#newsletter"
+      },
+      {
+        "label": "About",
+        "to": "/about"
+      },
+      {
+        "label": "Sign in",
+        "to": "/signin"
+      }
+    ],
+    "liveButton": {
+      "label": "Watch & Listen Live",
+      "to": "/live"
+    },
+    "footerTagline": "TV, radio and news in one place.",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "to": "/"
+      },
+      {
+        "label": "Terms",
+        "to": "/"
+      },
+      {
+        "label": "Accessibility",
+        "to": "/"
+      }
+    ],
+    "copyright": "MEDIA 1313"
   }
 }
