@@ -17,6 +17,7 @@ export default function AutoBlog() {
   const [keyIn, setKeyIn] = useState('');
   const [bulk, setBulk] = useState('');
   const [runTopic, setRunTopic] = useState('');
+  const [gModels, setGModels] = useState(null);
   const d = s.data;
 
   useEffect(() => { if (d) { setF(d.settings); setOrig(JSON.stringify(d.settings)); } }, [d?.settings]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -34,8 +35,9 @@ export default function AutoBlog() {
     return null;
   };
   const toggle = () => save({ enabled: !f.enabled }, f.enabled ? 'AI blog turned off' : 'AI blog turned on');
-  const saveKey = async () => { setBusy('key'); try { await adminApi.put('/autoblog/key', { apiKey: keyIn.trim() }); setKeyIn(''); s.reload(); toast('API key saved'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
-  const removeKey = async () => { if (!confirmAction('Remove the saved API key? The AI blog will be turned off.')) return; await adminApi.del('/autoblog/key'); s.reload(); toast('API key removed'); };
+  const saveKey = async () => { setBusy('key'); try { await adminApi.put('/autoblog/key', { provider: f.provider, apiKey: keyIn.trim() }); setKeyIn(''); s.reload(); toast('API key saved'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
+  const removeKey = async () => { if (!confirmAction('Remove the saved API key? The AI blog will be turned off.')) return; await adminApi.del(`/autoblog/key?provider=${f.provider}`); s.reload(); toast('API key removed'); };
+  const loadModels = async () => { setBusy('models'); try { const r = await adminApi.get('/autoblog/models'); if (r.error) toast(r.error, 'error'); else { setGModels(r.models); toast(`${r.models.length} models available to your key`); } } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
   const runNow = async () => {
     if (dirty) { toast('Save your changes first.', 'error'); return; }
     setBusy('run');
@@ -52,7 +54,7 @@ export default function AutoBlog() {
   const sc = d.schedule; const on = d.settings.enabled;
 
   return (
-    <Page title="AI blog" sub="Claude writes articles for you on a daily schedule, from the topics you choose. You decide how many a day and whether they go live or wait for your review."
+    <Page title="AI blog" sub="AI writes articles for you on a daily schedule, from the topics you choose. You decide how many a day and whether they go live or wait for your review."
       actions={<button className="ad-btn ad-primary" disabled={!dirty || busy === 'save'} onClick={() => save()}>{busy === 'save' ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button>}>
       <Status state={s} />
 
@@ -104,8 +106,17 @@ export default function AutoBlog() {
       <section className="ad-panel">
         <h2>Writing style</h2>
         <div className="ab-grid">
-          <div><label className="ad-label">AI model</label><select className="ad-input" value={f.model} onChange={set('model')}>{d.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></div>
-          <div><label className="ad-label">Effort</label><select className="ad-input" value={f.effort} onChange={set('effort')}><option value="low">Low — fastest, cheapest</option><option value="medium">Medium</option><option value="high">High — most careful</option></select></div>
+          <div><label className="ad-label">AI provider</label><select className="ad-input" value={f.provider} onChange={set('provider')}>{d.providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+          {f.provider === 'gemini'
+            ? <div><label className="ad-label">Gemini model</label>
+                <select className="ad-input" value={f.model} onChange={set('model')}>
+                  {[...new Map([...(gModels || []), ...d.geminiModels, { id: f.model, label: f.model }].map((m) => [m.id, m])).values()].map((m) => <option key={m.id} value={m.id}>{m.label}{m.label === m.id ? '' : ` (${m.id})`}</option>)}
+                </select>
+                <button type="button" className="ad-btn sm ghost" style={{ marginTop: 6 }} disabled={busy === 'models' || !d.keys.gemini.set} onClick={loadModels}>{busy === 'models' ? 'Loading…' : 'Load my available models'}</button></div>
+            : <div><label className="ad-label">Claude model</label><select className="ad-input" value={f.claudeModel} onChange={set('claudeModel')}>{d.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></div>}
+          {f.provider === 'claude'
+            ? <div><label className="ad-label">Effort</label><select className="ad-input" value={f.effort} onChange={set('effort')}><option value="low">Low — fastest, cheapest</option><option value="medium">Medium</option><option value="high">High — most careful</option></select></div>
+            : <div />}
           <div><label className="ad-label">Length (words)</label><input className="ad-input" type="number" min="300" max="1800" step="50" value={f.wordCount} onChange={set('wordCount')} /></div>
           <div><label className="ad-label">Language</label><input className="ad-input" value={f.language} onChange={set('language')} /></div>
         </div>
@@ -115,11 +126,13 @@ export default function AutoBlog() {
       </section>
 
       <section className="ad-panel">
-        <h2>Anthropic API key</h2>
+        <h2>{f.provider === 'claude' ? 'Anthropic (Claude) API key' : 'Google Gemini API key'}</h2>
         {d.key.set
           ? <p>Key in use: <Badge kind="ok">{d.key.hint}</Badge> <span className="ad-muted">{d.key.source === 'server' ? '(set on the server)' : '(saved here)'}</span> {d.key.source === 'saved' && <button className="ad-btn sm ghost danger" onClick={removeKey}>Remove</button>}</p>
-          : <p className="ad-muted">The AI needs an API key from <a className="ad-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a> (Settings → API keys). Usage is billed to your Anthropic account.</p>}
-        {d.key.source !== 'server' && <div className="ab-key"><input className="ad-input" type="password" autoComplete="off" placeholder="sk-ant-…" value={keyIn} onChange={(e) => setKeyIn(e.target.value)} /><button className="ad-btn ad-primary" disabled={!keyIn.trim() || busy === 'key'} onClick={saveKey}>{d.key.set ? 'Replace key' : 'Save key'}</button></div>}
+          : f.provider === 'claude'
+            ? <p className="ad-muted">The AI needs an API key from <a className="ad-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a> (Settings → API keys). Usage is billed to your Anthropic account.</p>
+            : <p className="ad-muted">Create a free key in <a className="ad-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a> (Get API key). It starts with <code>AIza</code>. Check Google’s current free-tier limits and pricing for the model you pick.</p>}
+        {d.key.source !== 'server' && <div className="ab-key"><input className="ad-input" type="password" autoComplete="off" placeholder={f.provider === 'claude' ? 'sk-ant-…' : 'AIza…'} value={keyIn} onChange={(e) => setKeyIn(e.target.value)} /><button className="ad-btn ad-primary" disabled={!keyIn.trim() || busy === 'key'} onClick={saveKey}>{d.key.set ? 'Replace key' : 'Save key'}</button></div>}
       </section>
 
       <section className="ad-panel">
