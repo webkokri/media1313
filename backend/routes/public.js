@@ -2,6 +2,7 @@ import { all, one, run, uuid, now, getContent } from '../lib/db.js';
 import { ok, fail, send, readJson, str, isEmail } from '../lib/http.js';
 import { hashPassword, verifyPassword, sign, memberId } from '../lib/auth.js';
 import { listPublished, getPublished, homeFeed } from '../lib/articles.js';
+import { tick as autoblogTick } from '../lib/autoblog.js';
 
 const cache = { 'Cache-Control': 'public, max-age=20' };
 
@@ -36,6 +37,13 @@ export function publicRoutes(r) {
     if (!p) return fail(c.res, 404, 'Page not found');
     send(c.res, 200, { slug: p.slug, title: p.title, tree: JSON.parse(p.tree || '{"sections":[]}'), settings: JSON.parse(p.settings || '{}') }, cache);
   });
+
+  // A real cron job can call this so posts keep flowing even when the Node process was asleep:  curl "https://…/api/cron/autoblog?key=$CRON_KEY"
+  const cron = async (c) => {
+    const k = process.env.CRON_KEY; if (!k || c.query.get('key') !== k) return fail(c.res, 404, 'Not found');
+    ok(c.res, await autoblogTick());
+  };
+  r.get('/api/cron/autoblog', cron); r.post('/api/cron/autoblog', cron);
 
   r.post('/api/newsletter', async (c) => {
     const b = await readJson(c.req); const email = str(b.email, 255).toLowerCase();

@@ -11,8 +11,11 @@
     "create-admin": "node --env-file=.env scripts/create-admin.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@libsql/client": "^0.18.0",
     "mysql2": "^3.24.6"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

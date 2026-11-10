@@ -3,6 +3,8 @@ import { ok, fail, send, readJson, readBuffer, str, isEmail, clientIp } from '..
 import { hashPassword, verifyPassword, adminCookie, currentAdmin } from '../lib/auth.js';
 import * as articles from '../lib/articles.js';
 import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
+import * as autoblog from '../lib/autoblog.js';
+import { setSetting, delSetting } from '../lib/db.js';
 
 // --- brute-force protection for the login form (per IP, in memory) ---
 const attempts = new Map();
@@ -153,6 +155,26 @@ export function adminRoutes(r) {
     await log(c, 'duplicated page', cur.title); ok(c.res, { page: pageOut(await one('SELECT * FROM m1313_pages WHERE id = ?', [id])) });
   });
   del('/api/admin/pages/:id', async (c) => { const p = await one('SELECT title FROM m1313_pages WHERE id = ?', [c.params.id]); await run('DELETE FROM m1313_pages WHERE id = ?', [c.params.id]); await log(c, 'deleted page', p?.title); ok(c.res); });
+
+  // ---------- AI auto-blog (administrators only) ----------
+  get('/api/admin/autoblog', async (c) => ok(c.res, await autoblog.status()), 'admin');
+  put('/api/admin/autoblog', async (c) => {
+    const b = await readJson(c.req); const s = await autoblog.saveSettings(b);
+    if (s.enabled && !(await autoblog.getApiKey())) { await autoblog.saveSettings({ ...s, enabled: false }); return fail(c.res, 400, 'Add your Anthropic API key before turning the AI blog on.'); }
+    if (s.enabled && !s.topics.some((t) => t.enabled)) { await autoblog.saveSettings({ ...s, enabled: false }); return fail(c.res, 400, 'Add at least one topic before turning the AI blog on.'); }
+    await log(c, s.enabled ? 'AI blog settings saved (on)' : 'AI blog settings saved (off)', `${s.postsPerDay}/day`); ok(c.res, await autoblog.status());
+  }, 'admin');
+  put('/api/admin/autoblog/key', async (c) => {
+    const k = str((await readJson(c.req)).apiKey, 300);
+    if (!/^sk-ant-/.test(k)) return fail(c.res, 400, 'That does not look like an Anthropic API key (it starts with sk-ant-).');
+    await setSetting('autoblog_key', k); await log(c, 'saved the Anthropic API key', ''); ok(c.res, await autoblog.status());
+  }, 'admin');
+  del('/api/admin/autoblog/key', async (c) => { await delSetting('autoblog_key'); await autoblog.saveSettings({ ...(await autoblog.loadSettings()), enabled: false }); await log(c, 'removed the Anthropic API key', ''); ok(c.res, await autoblog.status()); }, 'admin');
+  post('/api/admin/autoblog/run', async (c) => { // "write one now" — does not count toward the daily schedule
+    const b = await readJson(c.req);
+    try { const r = await autoblog.generateOne({ source: 'manual', topicId: b.topicId }); await log(c, 'AI wrote an article', r.title); ok(c.res, { result: r, ...(await autoblog.status()) }); }
+    catch (e) { send(c.res, 200, { error: e.message, ...(await autoblog.status()) }); }
+  }, 'admin');
 
   // ---------- media library ----------
   get('/api/admin/media', async (c) => ok(c.res, { media: await all('SELECT id, filename, url, mime, size_bytes, alt, created_at FROM m1313_media ORDER BY created_at DESC') }));

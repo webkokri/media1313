@@ -8,6 +8,7 @@ import './admin.css';
 const LiveEditor = lazy(() => import('./LiveEditor.jsx'));
 const PageBuilder = lazy(() => import('./PageBuilder.jsx'));
 const PagesList = lazy(() => import('./PagesList.jsx'));
+const AutoBlog = lazy(() => import('./AutoBlog.jsx'));
 
 const I = ({ d }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
 const NAV = [
@@ -15,6 +16,7 @@ const NAV = [
   ['/admin/live-edit', 'Live editor', 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
   ['/admin/pages', 'Pages', 'M5 3h10l4 4v14H5zM14 3v5h5M9 13h6M9 17h6'],
   ['/admin/articles', 'Articles', 'M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM8 9h8M8 13h8M8 17h4'],
+  ['/admin/autoblog', 'AI blog', 'M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9zM5 15l.7 1.6L7.5 17l-1.8.7L5 19.5l-.7-1.8L2.5 17l1.8-.4z', false, null, 'admin'],
   ['/admin/content', 'Site content', 'M3 5h18v6H3zM3 15h8v4H3zM15 15h6v4h-6z'],
   ['/admin/media', 'Media', 'M3 5h18v14H3zM8 11l3 3 2-2 4 4M8.5 9.5h.01'],
   ['/admin/leads', 'Enquiries', 'M3 6h18v12H3zM3 7l9 7 9-7', false, 'unread'],
@@ -99,6 +101,7 @@ function Shell() {
         <Route path="builder/:id" element={<Suspense fallback={<div className="ad-login"><p className="ad-muted">Loading page builder…</p></div>}><PageBuilder /></Suspense>} />
         <Route element={<Layout admin={admin} onOut={out} />}>
           <Route path="pages" element={<Suspense fallback={null}><PagesList /></Suspense>} />
+          <Route path="autoblog" element={admin.role === 'admin' ? <Suspense fallback={null}><AutoBlog /></Suspense> : <Navigate to="/admin" replace />} />
           <Route index element={<Dashboard admin={admin} />} />
           <Route path="articles" element={<Articles />} />
           <Route path="articles/:id" element={<ArticleEdit />} />

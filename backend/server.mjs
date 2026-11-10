@@ -24,6 +24,7 @@ const { send, fail } = await import('./lib/http.js');
 const { publicRoutes } = await import('./routes/public.js');
 const { adminRoutes } = await import('./routes/admin.js');
 const { UPLOAD_DIR } = await import('./lib/media.js');
+const { startAutoblog } = await import('./lib/autoblog.js');
 
 const router = createRouter();
 publicRoutes(router);
@@ -69,4 +70,4 @@ const server = http.createServer(async (req, res) => {
 });
 
 const port = parseInt(process.env.PORT, 10) || 4321;
-server.listen(port, process.env.HOSTNAME || '0.0.0.0', () => console.log(`MEDIA 1313 listening on ${port}`));
+server.listen(port, process.env.HOSTNAME || '0.0.0.0', () => { console.log(`MEDIA 1313 listening on ${port}`); startAutoblog(); });

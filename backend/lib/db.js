@@ -89,6 +89,12 @@ const SCHEMA = [
      id VARCHAR(36) NOT NULL PRIMARY KEY, slug VARCHAR(120) NOT NULL UNIQUE, title VARCHAR(300) NOT NULL,
      status VARCHAR(20) NOT NULL DEFAULT 'draft', tree LONGTEXT, draft_tree LONGTEXT, settings TEXT,
      created_at VARCHAR(40) NOT NULL, updated_at VARCHAR(40) NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS m1313_settings (
+     setting_key VARCHAR(100) NOT NULL PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at VARCHAR(40) NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS m1313_autoblog_log (
+     id VARCHAR(36) NOT NULL PRIMARY KEY, created_at VARCHAR(40) NOT NULL, source VARCHAR(10) NOT NULL DEFAULT 'auto',
+     topic VARCHAR(300), status VARCHAR(10) NOT NULL, title VARCHAR(300), article_id VARCHAR(36), message TEXT,
+     model VARCHAR(60), input_tokens INT, output_tokens INT)`,
   `CREATE TABLE IF NOT EXISTS m1313_activity (
      id VARCHAR(36) NOT NULL PRIMARY KEY, admin_email VARCHAR(255) NOT NULL, action VARCHAR(60) NOT NULL,
      target VARCHAR(300), created_at VARCHAR(40) NOT NULL)`,
@@ -107,3 +113,16 @@ export async function ensureSchema() {
 export async function logActivity(email, action, target = '') {
   try { await run('INSERT INTO m1313_activity (id, admin_email, action, target, created_at) VALUES (?, ?, ?, ?, ?)', [uuid(), email, action, String(target).slice(0, 300), now()]); } catch { /* never block on logging */ }
 }
+
+// ---- generic JSON settings (key → value) ----
+export async function getSetting(key, fallback = null) {
+  const r = await one('SELECT setting_value FROM m1313_settings WHERE setting_key = ?', [key]);
+  if (!r) return fallback;
+  try { return JSON.parse(r.setting_value); } catch { return fallback; }
+}
+export async function setSetting(key, value) {
+  const json = JSON.stringify(value);
+  if (await one('SELECT setting_key FROM m1313_settings WHERE setting_key = ?', [key])) await run('UPDATE m1313_settings SET setting_value = ?, updated_at = ? WHERE setting_key = ?', [json, now(), key]);
+  else await run('INSERT INTO m1313_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)', [key, json, now()]);
+}
+export const delSetting = (key) => run('DELETE FROM m1313_settings WHERE setting_key = ?', [key]);

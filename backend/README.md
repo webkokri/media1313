@@ -33,6 +33,7 @@ The admin lives at **/admin**. To run everything from the backend alone, build t
 - **Dashboard** – counts, recent enquiries, activity.
 - **Live editor** (`/admin/live-edit`) – the real site in a preview frame. Click any outlined area, edit it in the side panel, see it change instantly. Device sizes, undo/redo, *Save draft*, *Publish*.
 - **Pages** – the visual **page builder** (`/admin/pages`): drag widgets onto sections and columns, edit text right on the page, per-device settings, navigator, undo/redo, draft/publish. Pages are stored in `m1313_pages`; a published page replaces the built-in page at the same address (`home` = the homepage).
+- **AI blog** (`/admin/autoblog`, administrators) – Claude writes articles on a schedule: on/off switch, **posts per day**, posting window + time zone, **topics** you choose (rotated, no repeats), model/effort/length/tone, save-as-draft or publish, "write one now", activity log. Needs an Anthropic API key (pasted in the admin or `ANTHROPIC_API_KEY`).
 - **Articles** – write in Markdown with a toolbar and preview, cover image, category, tags, draft/publish.
 - **Site content** – every content block as a form (add/remove/reorder rows), with draft/publish.
 - **Media**, **Enquiries**, **Subscribers** (CSV export), **Song requests**, **Members**, **Activity**, **Users** (administrators only), **Account** (change password).
@@ -77,3 +78,11 @@ touch tmp/restart.txt            # restart
 Passenger sets `HOME` to the domain folder, so `public/.htaccess` passes the env-file path explicitly (`SetEnv MEDIA1313_ENV …`). The host reports 48 CPUs; the `SetEnv … THREADS 2` lines in `.htaccess` stop native modules from over-allocating threads.
 
 Add an admin: `ADMIN_EMAIL=… ADMIN_NAME=… ADMIN_PASSWORD=… ADMIN_ROLE=admin node scripts/create-admin.mjs` (same command resets a password).
+
+
+## AI blog — how it runs
+
+- Settings are in `m1313_settings` (`autoblog`; the API key in `autoblog_key`), the activity log in `m1313_autoblog_log`. Code: `lib/autoblog.js`.
+- The server checks every 5 minutes. N posts a day are spread evenly across the posting window (e.g. 4 posts, 07:00–22:00 → 07:00, 10:45, 14:30, 18:15); when it is late it catches up one post per check. A failed attempt backs off for 30 minutes.
+- Because Passenger can put an idle Node process to sleep, also add a real cron job that calls the cron URL every 10 minutes — set `CRON_KEY` in the env file and run: `*/10 * * * * curl -s "https://YOUR-SITE/api/cron/autoblog?key=YOUR_CRON_KEY" >/dev/null`.
+- Articles are written with the official `@anthropic-ai/sdk` (structured JSON output, server-side refusal fallback where the model supports it). The writer is told never to invent facts or quotes and to write explainers/guides, since it cannot see current news. Articles are tagged `ai-generated`.
