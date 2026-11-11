@@ -24,7 +24,7 @@ export const DEFAULTS = {
   enabled: false, postsPerDay: 2, mode: 'draft', windowStart: 7, windowEnd: 22, timezone: 'America/Toronto',
   provider: 'gemini', model: 'gemini-3.5-flash', claudeModel: 'claude-opus-5-5', effort: 'low', language: 'English', wordCount: 700, author: '1313 Newsroom',
   tone: 'Clear, neutral and engaging, in the style of a trustworthy local news and media site.',
-  imageSource: 'gemini', imageFallback: true, imageModel: 'gemini-3.1-flash-image', requireImage: true,
+  imageSource: 'openverse', imageFallback: true, imageModel: 'gemini-3.1-flash-image', requireImage: true,
   imageStyle: 'Realistic editorial photograph, natural light, shallow depth of field, authentic and professional.',
   topics: [],
 };
@@ -45,7 +45,7 @@ export async function saveSettings(input) {
     model: /^gemini-[A-Za-z0-9._\-]{2,60}$/.test(String(input.model || '')) ? input.model : cur.model,                                  // Gemini model id (any model the key can use)
     claudeModel: MODELS.some((m) => m.id === input.claudeModel) ? input.claudeModel : cur.claudeModel,
     effort: ['low', 'medium', 'high'].includes(input.effort) ? input.effort : cur.effort,
-    imageSource: ['gemini', 'pexels', 'none'].includes(input.imageSource) ? input.imageSource : cur.imageSource, imageFallback: input.imageFallback !== false, requireImage: input.requireImage !== false,
+    imageSource: ['openverse', 'gemini', 'pexels', 'none'].includes(input.imageSource) ? input.imageSource : cur.imageSource, imageFallback: input.imageFallback !== false, requireImage: input.requireImage !== false,
     imageModel: /^[A-Za-z0-9._\-]{3,80}$/.test(String(input.imageModel || '')) ? input.imageModel : cur.imageModel, imageStyle: String(input.imageStyle || DEFAULTS.imageStyle).slice(0, 300),
     language: String(input.language || 'English').slice(0, 40), tone: String(input.tone || DEFAULTS.tone).slice(0, 400),
     wordCount: n(input.wordCount, 300, 1800, cur.wordCount), author: String(input.author || DEFAULTS.author).slice(0, 100),
@@ -255,21 +255,50 @@ async function pexelsImage(query) {
   return { buf: Buffer.from(await img.arrayBuffer()), via: 'Pexels stock photo', credit: `${pick.photographer} / Pexels`, creditUrl: pick.url };
 }
 
+const OPENVERSE_BASE = () => (process.env.OPENVERSE_BASE_URL || 'https://api.openverse.org').replace(/\/$/, '');
+/** Free, keyless: openly-licensed photos (CC0 / public domain / CC BY) from Openverse. Credit is added to the article. */
+async function openverseImage(query, alt) {
+  const tries = [...new Set([query, String(query).split(/\s+/).slice(0, 2).join(' ')])].filter(Boolean);
+  for (const q of tries) {
+    let r;
+    for (let attempt = 0; attempt < 4; attempt++) {                                           // the free service sometimes times out — retry a few times
+      try { r = await fetch(`${OPENVERSE_BASE()}/v1/images/?q=${encodeURIComponent(q)}&license=cc0,pdm,by&aspect_ratio=wide&mature=false&page_size=12`, { headers: { 'User-Agent': 'MEDIA1313-autoblog/1.0 (+https://media1313.com)' }, signal: AbortSignal.timeout(25e3) }); } catch { r = null; }
+      if (r && r.status < 500) break;
+      await new Promise((ok) => setTimeout(ok, 1500 * (attempt + 1)));
+    }
+    if (!r) throw new Error('Could not reach Openverse.');
+    if (r.status === 429) throw new Error('Openverse rate limit reached — try again later.');
+    if (!r.ok) throw new Error(`Openverse error ${r.status}`);
+    const hits = ((await r.json()).results || []).filter((x) => x.url && !x.mature);
+    for (const pick of hits.sort(() => Math.random() - 0.5).slice(0, 6)) {                    // vary the photo between similar articles
+      try {
+        const img = await fetch(pick.url, { headers: { 'User-Agent': 'MEDIA1313-autoblog/1.0' }, signal: AbortSignal.timeout(30e3) });
+        const buf = Buffer.from(await img.arrayBuffer());
+        const isJpg = buf[0] === 0xff && buf[1] === 0xd8, isPng = buf[0] === 0x89 && buf[1] === 0x50;
+        if (!img.ok || buf.length < 25e3 || buf.length > 8e6 || !(isJpg || isPng)) continue;
+        const L = String(pick.license || '').toUpperCase(); const lic = !L ? 'open licence' : L === 'PDM' ? 'Public domain' : `${L.startsWith('CC') ? '' : 'CC '}${L}${pick.license_version ? ' ' + pick.license_version : ''}`;
+        return { buf, via: 'Openverse free photo', credit: `${pick.creator || 'Unknown'} via Openverse (${lic})`, creditUrl: pick.foreign_landing_url };
+      } catch { /* try the next photo */ }
+    }
+  }
+  throw new Error(`No free photo found for “${query}”.`);
+}
+
 /** Make the cover image for an article. Returns { url, via, credit } or { error }. Never throws. */
 export async function makeCoverImage(s, art, { save = true } = {}) {
   if (s.imageSource === 'none') return { skipped: true };
-  const order = [s.imageSource, ...(s.imageFallback ? ['gemini', 'pexels'].filter((x) => x !== s.imageSource) : [])];
+  const order = [s.imageSource, ...(s.imageFallback ? ['openverse', 'pexels', 'gemini'].filter((x) => x !== s.imageSource) : [])];
   const problems = [];
   for (const src of order) {
     try {
       if (src === 'gemini' && !(await getApiKey('gemini'))) { problems.push('Gemini: no key'); continue; }
       if (src === 'pexels' && !(await getApiKey('pexels'))) { problems.push('Pexels: no key'); continue; }
-      const got = src === 'gemini' ? await geminiImage(s, art.image.prompt) : await pexelsImage(art.image.query);
+      const got = src === 'gemini' ? await geminiImage(s, art.image.prompt) : src === 'openverse' ? await openverseImage(art.image.query, art.image.alt) : await pexelsImage(art.image.query);
       if (!save) return { ok: true, via: got.via, bytes: got.buf.length };
       const f = saveUpload(got.buf, `${slugOfTitle(art.title)}.${got.buf[0] === 0xff ? 'jpg' : 'png'}`);
       await run('INSERT INTO m1313_media (id, filename, url, mime, size_bytes, alt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [uuid(), `${slugOfTitle(art.title)}${f.url.slice(f.url.lastIndexOf('.'))}`, f.url, f.mime, f.size, art.image.alt + (src === 'gemini' ? ' (AI-generated image)' : ''), now()]);
       return { ok: true, url: f.url, via: got.via, credit: got.credit, alt: art.image.alt };
-    } catch (e) { problems.push(`${src === 'gemini' ? 'Gemini' : 'Pexels'}: ${src === 'gemini' ? imageErr(e) : e.message}`); }
+    } catch (e) { problems.push(`${src === 'gemini' ? 'Gemini' : src === 'pexels' ? 'Pexels' : 'Openverse'}: ${src === 'gemini' ? imageErr(e) : e.message}`); }
   }
   return { error: problems.join(' · ') || 'No image source is set up.' };
 }

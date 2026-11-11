@@ -137,9 +137,9 @@ export default function AutoBlog() {
 
       <section className="ad-panel">
         <h2>Article images</h2>
-        <p className="ad-muted">Every article gets a cover image made for its subject: the AI describes the scene, then the image is generated (or a matching stock photo is found) and attached automatically.</p>
+        <p className="ad-muted">Every article gets a cover image that matches its subject: the AI picks search words for the scene, and a free openly-licensed photo is found and attached automatically (credited at the end of the article). You can also generate AI images with Gemini if your Google plan includes it.</p>
         <div className="ab-grid">
-          <div><label className="ad-label">Image source</label><select className="ad-input" value={f.imageSource} onChange={set('imageSource')}><option value="gemini">Generate with Gemini (AI image)</option><option value="pexels">Pexels stock photo</option><option value="none">No images</option></select></div>
+          <div><label className="ad-label">Image source</label><select className="ad-input" value={f.imageSource} onChange={set('imageSource')}><option value="openverse">Free photos — Openverse (no key needed)</option><option value="gemini">Generate with Gemini (AI image, needs billing)</option><option value="pexels">Pexels stock photo</option><option value="none">No images</option></select></div>
           <div><label className="ad-label">Gemini image model</label>
             <select className="ad-input" value={f.imageModel} onChange={set('imageModel')}>
               {[...new Map([...(iModels || []), ...(d.imageModelPresets || []), { id: f.imageModel, label: f.imageModel }].map((m) => [m.id, m])).values()].map((m) => <option key={m.id} value={m.id}>{m.label}{m.label === m.id ? '' : ` (${m.id})`}</option>)}
@@ -158,7 +158,7 @@ export default function AutoBlog() {
           <button className="ad-btn" disabled={busy === 'img' || f.imageSource === 'none'} onClick={testImg}>{busy === 'img' ? 'Testing…' : 'Test image generation'}</button>
           {imgTest && (imgTest.ok ? <p style={{ marginTop: 8 }}><Badge kind="ok">Working</Badge> {imgTest.via}</p> : <p style={{ marginTop: 8 }}><Badge kind="warn">Not working</Badge> {imgTest.error}</p>)}
         </div>
-        <p className="ad-muted" style={{ marginTop: 10 }}>Google does not include image generation in the free Gemini tier. If the test says the quota is exceeded, switch on billing for your key in Google AI Studio, or add a Pexels key above so articles still get a relevant photo.</p>
+        <p className="ad-muted" style={{ marginTop: 10 }}>Free photos need no account. Gemini image generation is not in Google’s free tier — pick it only if billing is on. If the first source fails, the others are tried automatically.</p>
       </section>
 
       <section className="ad-panel">
