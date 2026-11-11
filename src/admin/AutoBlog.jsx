@@ -131,8 +131,8 @@ export default function AutoBlog() {
           ? <p>Key in use: <Badge kind="ok">{d.key.hint}</Badge> <span className="ad-muted">{d.key.source === 'server' ? '(set on the server)' : '(saved here)'}</span> {d.key.source === 'saved' && <button className="ad-btn sm ghost danger" onClick={removeKey}>Remove</button>}</p>
           : f.provider === 'claude'
             ? <p className="ad-muted">The AI needs an API key from <a className="ad-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a> (Settings → API keys). Usage is billed to your Anthropic account.</p>
-            : <p className="ad-muted">Create a free key in <a className="ad-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a> (Get API key). It starts with <code>AIza</code>. Check Google’s current free-tier limits and pricing for the model you pick.</p>}
-        {d.key.source !== 'server' && <div className="ab-key"><input className="ad-input" type="password" autoComplete="off" placeholder={f.provider === 'claude' ? 'sk-ant-…' : 'AIza…'} value={keyIn} onChange={(e) => setKeyIn(e.target.value)} /><button className="ad-btn ad-primary" disabled={!keyIn.trim() || busy === 'key'} onClick={saveKey}>{d.key.set ? 'Replace key' : 'Save key'}</button></div>}
+            : <p className="ad-muted">Create a free key in <a className="ad-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a> (Get API key). It starts with <code>AIza</code> or <code>AQ.</code>. Check Google’s current free-tier limits and pricing for the model you pick.</p>}
+        {d.key.source !== 'server' && <div className="ab-key"><input className="ad-input" type="password" autoComplete="off" placeholder={f.provider === 'claude' ? 'sk-ant-…' : 'AIza… or AQ.…'} value={keyIn} onChange={(e) => setKeyIn(e.target.value)} /><button className="ad-btn ad-primary" disabled={!keyIn.trim() || busy === 'key'} onClick={saveKey}>{d.key.set ? 'Replace key' : 'Save key'}</button></div>}
       </section>
 
       <section className="ad-panel">

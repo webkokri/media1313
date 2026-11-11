@@ -9,7 +9,7 @@ import { adminSave } from './articles.js';
 
 export const PROVIDERS = [{ id: 'gemini', label: 'Google Gemini' }, { id: 'claude', label: 'Anthropic Claude' }];
 export const GEMINI_MODELS = [
-  { id: 'gemini-flash-latest', label: 'Gemini Flash (latest) — fast, low cost (default)' },
+  { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash — fast, low cost (default)' },
   { id: 'gemini-pro-latest', label: 'Gemini Pro (latest) — highest quality' },
   { id: 'gemini-flash-lite-latest', label: 'Gemini Flash-Lite (latest) — lowest cost' },
 ];
@@ -21,7 +21,7 @@ export const MODELS = [
 ];
 export const DEFAULTS = {
   enabled: false, postsPerDay: 2, mode: 'draft', windowStart: 7, windowEnd: 22, timezone: 'America/Toronto',
-  provider: 'gemini', model: 'gemini-flash-latest', claudeModel: 'claude-opus-5-5', effort: 'low', language: 'English', wordCount: 700, author: '1313 Newsroom',
+  provider: 'gemini', model: 'gemini-3.5-flash', claudeModel: 'claude-opus-5-5', effort: 'low', language: 'English', wordCount: 700, author: '1313 Newsroom',
   tone: 'Clear, neutral and engaging, in the style of a trustworthy local news and media site.',
   topics: [],
 };
@@ -155,8 +155,28 @@ const G_SCHEMA = (cats) => ({
   properties: { title: { type: 'STRING' }, dek: { type: 'STRING' }, category: { type: 'STRING', enum: cats }, tags: { type: 'ARRAY', items: { type: 'STRING' } }, content: { type: 'STRING' } },
   required: ['title', 'dek', 'category', 'tags', 'content'], propertyOrdering: ['title', 'dek', 'category', 'tags', 'content'],
 });
+const flashRank = (id) => { const m = /^gemini-(\d+(?:\.\d+)?)-flash$/.exec(id); return m ? parseFloat(m[1]) : null; };
+/** Stable "Flash" models this key can use, newest first (used when the chosen model is retired or overloaded). */
+export async function flashModels(key) {
+  const ids = (await listGeminiModels(key)).map((m) => m.id);
+  return ids.filter((id) => flashRank(id) !== null).sort((a, b) => flashRank(b) - flashRank(a));
+}
 async function callGemini(key, s, topic, recentTitles, cats) {
-  const model = s.model.replace(/^models\//, '');
+  const tried = []; let lastErr;
+  let candidates = [s.model.replace(/^models\//, '')];
+  for (let i = 0; i < candidates.length; i++) {
+    const model = candidates[i]; tried.push(model);
+    try { return await callGeminiModel(key, s, model, topic, recentTitles, cats); }
+    catch (e) {
+      lastErr = e;
+      const retired = e instanceof GeminiError && (e.status === 404 || e.status === 503 || e.status === 429) ;
+      if (!retired || i >= 2) break;                                                                  // only a missing / overloaded model moves on, and only twice
+      if (candidates.length === 1) { try { candidates = [...candidates, ...(await flashModels(key)).filter((m) => m !== candidates[0]).slice(0, 2)]; } catch { break; } }
+    }
+  }
+  throw lastErr;
+}
+async function callGeminiModel(key, s, model, topic, recentTitles, cats) {
   const prompt = userPrompt(topic, recentTitles);
   const body = (withSchema) => ({
     systemInstruction: { parts: [{ text: SYSTEM(s, cats) + (withSchema ? '' : '\n\nReturn ONLY a JSON object with the keys title, dek, category, tags, content.') }] },
@@ -174,8 +194,8 @@ async function callGemini(key, s, topic, recentTitles, cats) {
   return { text, model: res.modelVersion || model, usage: { input: res.usageMetadata?.promptTokenCount ?? null, output: res.usageMetadata?.candidatesTokenCount ?? null } };
 }
 /** Models the saved Gemini key can use for generateContent (so the admin can offer a real list). */
-export async function listGeminiModels() {
-  const key = await getApiKey('gemini'); if (!key) throw new Error('Save your Gemini API key first.');
+export async function listGeminiModels(givenKey) {
+  const key = givenKey || (await getApiKey('gemini')); if (!key) throw new Error('Save your Gemini API key first.');
   const out = []; let page = '';
   for (let i = 0; i < 4; i++) {
     const r = await geminiFetch(`/v1beta/models?pageSize=100${page ? `&pageToken=${page}` : ''}`, key, { method: 'GET' });
@@ -268,4 +288,16 @@ export async function status() {
   const s = await loadSettings(); const log = await recentLog(40);
   const keyInfo = async (p) => { const k = await getApiKey(p); return { set: !!k, hint: keyHint(k), source: keySource(p, k) }; };
   return { settings: s, schedule: schedule(s, log), key: await keyInfo(s.provider), keys: { gemini: await keyInfo('gemini'), claude: await keyInfo('claude') }, log, categories: await categories(), providers: PROVIDERS, geminiModels: GEMINI_MODELS, models: MODELS };
+}
+
+/** After a Gemini key is saved: make sure the chosen model exists for that key, otherwise switch to the newest Flash model it can use. */
+export async function ensureGeminiModel(key) {
+  const s = await loadSettings();
+  try {
+    const ids = (await listGeminiModels(key)).map((m) => m.id);
+    if (ids.includes(s.model)) return s.model;
+    const best = ids.filter((id) => flashRank(id) !== null).sort((a, b) => flashRank(b) - flashRank(a))[0];
+    if (best) { await setSetting('autoblog', { ...s, model: best }); return best; }
+  } catch { /* leave the model as it is */ }
+  return s.model;
 }

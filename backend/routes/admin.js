@@ -168,8 +168,8 @@ export function adminRoutes(r) {
   put('/api/admin/autoblog/key', async (c) => {
     const b = await readJson(c.req); const provider = b.provider === 'claude' ? 'claude' : 'gemini'; const k = str(b.apiKey, 300);
     if (provider === 'claude' && !/^sk-ant-/.test(k)) return fail(c.res, 400, 'That does not look like an Anthropic API key (it starts with sk-ant-).');
-    if (provider === 'gemini' && !/^AIza[\w-]{20,}$/.test(k)) return fail(c.res, 400, 'That does not look like a Gemini API key (it starts with AIza). Create one in Google AI Studio.');
-    await setSetting(autoblog.keySettingName(provider), k); await log(c, `saved the ${provider === 'claude' ? 'Anthropic' : 'Gemini'} API key`, ''); ok(c.res, await autoblog.status());
+    if (provider === 'gemini' && !/^(AIza[\w-]{20,}|AQ\.[\w.-]{20,})$/.test(k)) return fail(c.res, 400, 'That does not look like a Gemini API key (it starts with AIza or AQ.). Create one in Google AI Studio.');
+    await setSetting(autoblog.keySettingName(provider), k); if (provider === 'gemini') await autoblog.ensureGeminiModel(k); await log(c, `saved the ${provider === 'claude' ? 'Anthropic' : 'Gemini'} API key`, ''); ok(c.res, await autoblog.status());
   }, 'admin');
   del('/api/admin/autoblog/key', async (c) => {
     const provider = c.query.get('provider') === 'claude' ? 'claude' : 'gemini';
