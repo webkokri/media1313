@@ -40,7 +40,23 @@ The admin lives at **/admin**. To run everything from the backend alone, build t
 
 Security: passwords are scrypt-hashed; the session is an HttpOnly, SameSite cookie; changing a password signs out other sessions; all admin writes need an `X-Requested-With` header (CSRF); login is rate-limited per IP; uploads are checked by file signature (JPG/PNG/WebP/GIF/PDF only, 10 MB).
 
-## API (public)
+## Public API v1 (for mobile apps and other websites)
+
+Base address `https://YOUR-SITE/api/v1` · interactive docs **`/api/docs`** · OpenAPI 3 spec `/api/v1/openapi.json` (import into Postman or generate an app client).
+Code: `routes/v1.js` (every endpoint is declared once there; the router, the spec and the docs are all built from that list), `lib/apiGate.js` (keys, CORS, rate limits), `lib/apiDocs.js`.
+
+- **Responses**: `{ "data": …, "meta": {page, per_page, total, total_pages}, "links": {self, next, prev} }`; errors `{ "error": { "code", "message" } }`.
+- **News**: `/home`, `/articles` (filters: `category`, `tag`, `q`, `updated_since`, `sort`, `content=html|markdown`, pagination), `/articles/{slug}`, `/categories`, `/tags`, `/search`.
+- **Live**: `/live` (TV HLS URL, radio stream URL, now/next, breaking banner), `/schedule`, `/shows`, `/podcasts`, `/episodes`, `/videos`, `/sports`.
+- **Site**: `/site` (menu/footer/categories), `/pages`, `/pages/{slug}`.
+- **Forms** (POST): `/newsletter`, `/contact`, `/song-requests`.
+- **Accounts**: `/auth/register|login|refresh`, `/me`, `DELETE /me` (App Store / Play requirement), `/me/bookmarks`, `/me/follows`. Token: `Authorization: Bearer …` (30 days).
+- **Controls** (Admin → Public API): turn the API on/off, require API keys (`X-API-Key` header or `?api_key=`), create/revoke keys with usage counters, allowed websites (CORS), requests/minute (writes capped at 20/min).
+- **Efficiency**: `ETag` + `If-None-Match` → `304`, `Cache-Control`, `updated_since` for incremental sync, `X-RateLimit-*` headers.
+
+The older unversioned `/api/…` routes below are used by the website itself and may change; apps should use `/api/v1`.
+
+## API (used by the website)
 
 `GET /api/pages/:slug` (published builder page) · `GET /api/home` · `GET /api/articles?category=&limit=&exclude=` · `GET /api/articles/:slug` · `GET /api/content` ·
 `POST /api/newsletter` · `POST /api/contact` · `POST /api/song-requests` ·

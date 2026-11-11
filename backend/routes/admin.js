@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword, adminCookie, currentAdmin } from '../lib/
 import * as articles from '../lib/articles.js';
 import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
 import * as autoblog from '../lib/autoblog.js';
+import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
 // --- brute-force protection for the login form (per IP, in memory) ---
@@ -181,6 +182,17 @@ export function adminRoutes(r) {
     try { const r = await autoblog.generateOne({ source: 'manual', topicId: b.topicId }); await log(c, 'AI wrote an article', r.title); ok(c.res, { result: r, ...(await autoblog.status()) }); }
     catch (e) { send(c.res, 200, { error: e.message, ...(await autoblog.status()) }); }
   }, 'admin');
+
+  // ---------- public API (administrators only) ----------
+  const apiInfo = async (c) => ({ settings: await apiGate.apiSettings(), keys: await apiGate.listKeys(), baseUrl: `${process.env.PUBLIC_URL || `${(c.req.headers['x-forwarded-proto'] || (c.req.socket.encrypted ? 'https' : 'http')).toString().split(',')[0]}://${c.req.headers['x-forwarded-host'] || c.req.headers.host}`}/api/v1` });
+  get('/api/admin/public-api', async (c) => ok(c.res, await apiInfo(c)), 'admin');
+  put('/api/admin/public-api', async (c) => { await apiGate.saveApiSettings(await readJson(c.req)); await log(c, 'updated public API settings', ''); ok(c.res, await apiInfo(c)); }, 'admin');
+  post('/api/admin/public-api/keys', async (c) => {
+    const name = str((await readJson(c.req)).name, 120); if (!name) return fail(c.res, 400, 'Give the key a name (for example “iOS app”).');
+    const k = await apiGate.createKey(name); await log(c, 'created an API key', name); ok(c.res, { created: { id: k.id, key: k.key }, ...(await apiInfo(c)) });
+  }, 'admin');
+  put('/api/admin/public-api/keys/:id/revoke', async (c) => { await apiGate.revokeKey(c.params.id); await log(c, 'revoked an API key', c.params.id); ok(c.res, await apiInfo(c)); }, 'admin');
+  del('/api/admin/public-api/keys/:id', async (c) => { await apiGate.deleteKey(c.params.id); await log(c, 'deleted an API key', c.params.id); ok(c.res, await apiInfo(c)); }, 'admin');
 
   // ---------- media library ----------
   get('/api/admin/media', async (c) => ok(c.res, { media: await all('SELECT id, filename, url, mime, size_bytes, alt, created_at FROM m1313_media ORDER BY created_at DESC') }));

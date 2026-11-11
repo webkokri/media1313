@@ -25,10 +25,14 @@ const { publicRoutes } = await import('./routes/public.js');
 const { adminRoutes } = await import('./routes/admin.js');
 const { UPLOAD_DIR } = await import('./lib/media.js');
 const { startAutoblog } = await import('./lib/autoblog.js');
+const { v1Routes } = await import('./routes/v1.js');
+const { corsHeaders } = await import('./lib/apiGate.js');
+const { docsHtml } = await import('./lib/apiDocs.js');
 
 const router = createRouter();
 publicRoutes(router);
 adminRoutes(router);
+v1Routes(router);
 await ensureSchema();
 
 const WEB = path.resolve(process.env.WEB_ROOT || path.join(here, '..', 'dist'));
@@ -49,6 +53,11 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   let pathname; try { pathname = decodeURIComponent(url.pathname); } catch { return fail(res, 400, 'Bad request'); }
   try {
+    if (pathname === '/api/docs' || pathname === '/api/docs/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }); return res.end(docsHtml()); }
+    if (pathname.startsWith('/api/v1')) {                                           // public API: CORS preflight + JSON errors in the v1 shape
+      if (req.method === 'OPTIONS') { res.writeHead(204, await corsHeaders(req)); return res.end(); }
+      if (!router.match(req.method, pathname)) return send(res, 404, { error: { code: 'not_found', message: 'No such endpoint. See /api/docs.' } }, await corsHeaders(req));
+    }
     if (pathname.startsWith('/api/')) {
       const m = router.match(req.method, pathname);
       if (!m) return fail(res, pathname.startsWith('/api/admin') || req.method === 'GET' ? 404 : 405, 'Not found');

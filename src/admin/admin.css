@@ -202,3 +202,7 @@ small { color: var(--mut); display: block; margin-top: 4px; font-size: 12px; }
 @media (max-width: 960px) { .ab-grid { grid-template-columns: 1fr 1fr; } .ab-radio { grid-template-columns: 1fr; } .ab-topic { grid-template-columns: 28px 1fr 36px; } .ab-topic select, .ab-topic input:nth-of-type(2) { grid-column: 2 / 3; } .ab-status { flex-direction: row; } }
 
 .ad-tbl thead tr { background: transparent; } .ad-tbl tbody tr { border-top: 0; } .ad-tbl { font-size: 14px; }
+
+/* ---------- public API ---------- */
+.ad-code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #121214; border: 1px solid var(--line2); border-radius: 6px; padding: 2px 8px; } .ad-pre { background: #09090b; border: 1px solid var(--line2); border-radius: 10px; padding: 14px; overflow: auto; font: 13px ui-monospace, Menlo, monospace; color: #d4d4d8; margin: 6px 0 14px; }
+.api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; } .api-tile { border: 1px solid var(--line2); border-radius: 10px; padding: 14px; background: #0d0d0f; } .api-tile p { color: var(--mut); font-size: 13px; margin-top: 6px; }
