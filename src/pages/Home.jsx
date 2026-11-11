@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowIcon, Equalizer, LiveBadge, PauseIcon, Placeholder, PlayIcon, SectionHead, Segmented, VideoCard, VideoIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
+import NewsTicker from '../components/NewsTicker.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { useRadio } from '../radio.jsx';
 import { Loaded, articleMeta, articleTo, clock, timeAgo, useApi, useNewsletter } from '../api.jsx';
@@ -66,12 +67,7 @@ function HomeBody({ feed }) {
   return (
     <main>
       {/* Breaking ticker */}
-      <div className="ticker" data-edit="SITE">
-        <div className="container">
-          <strong>BREAKING</strong>
-          <p>{SITE.breaking}</p>
-        </div>
-      </div>
+      <div data-edit="SITE"><NewsTicker /></div>
 
       {/* Live band */}
       <section aria-label="Live now" style={{ background: 'var(--night)', color: '#fff' }}>
