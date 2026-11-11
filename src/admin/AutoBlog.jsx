@@ -18,6 +18,9 @@ export default function AutoBlog() {
   const [bulk, setBulk] = useState('');
   const [runTopic, setRunTopic] = useState('');
   const [gModels, setGModels] = useState(null);
+  const [iModels, setIModels] = useState(null);
+  const [pxIn, setPxIn] = useState('');
+  const [imgTest, setImgTest] = useState(null);
   const d = s.data;
 
   useEffect(() => { if (d) { setF(d.settings); setOrig(JSON.stringify(d.settings)); } }, [d?.settings]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -37,7 +40,14 @@ export default function AutoBlog() {
   const toggle = () => save({ enabled: !f.enabled }, f.enabled ? 'AI blog turned off' : 'AI blog turned on');
   const saveKey = async () => { setBusy('key'); try { await adminApi.put('/autoblog/key', { provider: f.provider, apiKey: keyIn.trim() }); setKeyIn(''); s.reload(); toast('API key saved'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
   const removeKey = async () => { if (!confirmAction('Remove the saved API key? The AI blog will be turned off.')) return; await adminApi.del(`/autoblog/key?provider=${f.provider}`); s.reload(); toast('API key removed'); };
-  const loadModels = async () => { setBusy('models'); try { const r = await adminApi.get('/autoblog/models'); if (r.error) toast(r.error, 'error'); else { setGModels(r.models); toast(`${r.models.length} models available to your key`); } } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
+  const loadModels = async () => { setBusy('models'); try { const r = await adminApi.get('/autoblog/models'); if (r.error) toast(r.error, 'error'); else { setGModels(r.models); setIModels(r.imageModels || null); toast(`${r.models.length} models available to your key`); } } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
+  const savePexels = async () => { setBusy('px'); try { await adminApi.put('/autoblog/key', { provider: 'pexels', apiKey: pxIn.trim() }); setPxIn(''); s.reload(); toast('Pexels key saved'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
+  const removePexels = async () => { await adminApi.del('/autoblog/key?provider=pexels'); s.reload(); toast('Pexels key removed'); };
+  const testImg = async () => {
+    if (dirty) { toast('Save your changes first.', 'error'); return; }
+    setBusy('img'); setImgTest(null);
+    try { const r = await adminApi.post('/autoblog/test-image', {}); setImgTest(r.result); } catch (e) { setImgTest({ error: e.message }); } finally { setBusy(''); }
+  };
   const runNow = async () => {
     if (dirty) { toast('Save your changes first.', 'error'); return; }
     setBusy('run');
@@ -123,6 +133,32 @@ export default function AutoBlog() {
         <label className="ad-label">Tone of voice</label><textarea className="ad-input" rows={2} value={f.tone} onChange={set('tone')} />
         <label className="ad-label">Author byline</label><input className="ad-input" style={{ maxWidth: 320 }} value={f.author} onChange={set('author')} />
         <p className="ad-muted" style={{ marginTop: 12 }}>The AI writes explainers, guides and background pieces — it can’t see today’s news, and it is told never to invent facts, quotes or statistics. Articles are tagged <Badge kind="muted">ai-generated</Badge>. Always have a person review anything sensitive before it goes live.</p>
+      </section>
+
+      <section className="ad-panel">
+        <h2>Article images</h2>
+        <p className="ad-muted">Every article gets a cover image made for its subject: the AI describes the scene, then the image is generated (or a matching stock photo is found) and attached automatically.</p>
+        <div className="ab-grid">
+          <div><label className="ad-label">Image source</label><select className="ad-input" value={f.imageSource} onChange={set('imageSource')}><option value="gemini">Generate with Gemini (AI image)</option><option value="pexels">Pexels stock photo</option><option value="none">No images</option></select></div>
+          <div><label className="ad-label">Gemini image model</label>
+            <select className="ad-input" value={f.imageModel} onChange={set('imageModel')}>
+              {[...new Map([...(iModels || []), ...(d.imageModelPresets || []), { id: f.imageModel, label: f.imageModel }].map((m) => [m.id, m])).values()].map((m) => <option key={m.id} value={m.id}>{m.label}{m.label === m.id ? '' : ` (${m.id})`}</option>)}
+            </select>
+            <button type="button" className="ad-btn sm ghost" style={{ marginTop: 6 }} disabled={busy === 'models' || !d.keys.gemini.set} onClick={loadModels}>{busy === 'models' ? 'Loading…' : 'Load my available models'}</button></div>
+        </div>
+        <label className="ad-label">Look and feel</label><textarea className="ad-input" rows={2} value={f.imageStyle} onChange={set('imageStyle')} />
+        <label className="ab-check"><input type="checkbox" checked={f.imageFallback} onChange={(e) => setF({ ...f, imageFallback: e.target.checked })} /> If the first source fails, try the other one</label>
+        <label className="ab-check"><input type="checkbox" checked={f.requireImage} onChange={(e) => setF({ ...f, requireImage: e.target.checked })} /> Never publish an article without an image (hold it as a draft instead)</label>
+        <h3 style={{ marginTop: 16 }}>Pexels API key <span className="ad-muted">(free stock photos, optional)</span></h3>
+        {d.keys.pexels.set
+          ? <p>Key in use: <Badge kind="ok">{d.keys.pexels.hint}</Badge> {d.keys.pexels.source === 'saved' && <button className="ad-btn sm ghost danger" onClick={removePexels}>Remove</button>}</p>
+          : <p className="ad-muted">Get a free key at <a className="ad-link" href="https://www.pexels.com/api/" target="_blank" rel="noreferrer">pexels.com/api</a>. Photos are credited to the photographer at the end of the article.</p>}
+        <div className="ab-key"><input className="ad-input" type="password" autoComplete="off" placeholder="Pexels API key" value={pxIn} onChange={(e) => setPxIn(e.target.value)} /><button className="ad-btn ad-primary" disabled={!pxIn.trim() || busy === 'px'} onClick={savePexels}>{d.keys.pexels.set ? 'Replace key' : 'Save key'}</button></div>
+        <div style={{ marginTop: 14 }}>
+          <button className="ad-btn" disabled={busy === 'img' || f.imageSource === 'none'} onClick={testImg}>{busy === 'img' ? 'Testing…' : 'Test image generation'}</button>
+          {imgTest && (imgTest.ok ? <p style={{ marginTop: 8 }}><Badge kind="ok">Working</Badge> {imgTest.via}</p> : <p style={{ marginTop: 8 }}><Badge kind="warn">Not working</Badge> {imgTest.error}</p>)}
+        </div>
+        <p className="ad-muted" style={{ marginTop: 10 }}>Google does not include image generation in the free Gemini tier. If the test says the quota is exceeded, switch on billing for your key in Google AI Studio, or add a Pexels key above so articles still get a relevant photo.</p>
       </section>
 
       <section className="ad-panel">

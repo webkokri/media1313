@@ -74,8 +74,10 @@ export const Equalizer = ({ height = 24, bars = 4, color = 'var(--amber)' }) => 
 );
 
 /** Grey image placeholder — replace with <img> when you have photos. */
-export const Placeholder = ({ ratio = '16-9', label, dark = false, style, className = '' }) => (
-  <div className={`ph r-${ratio} ${dark ? 'ph--dark' : ''} ${className}`} style={style}>{label}</div>
+export const Placeholder = ({ ratio = '16-9', label, dark = false, style, className = '', src, alt = '' }) => (
+  src
+    ? <img className={`ph-img r-${ratio} ${className}`} style={style} src={src} alt={alt} loading="lazy" />
+    : <div className={`ph r-${ratio} ${dark ? 'ph--dark' : ''} ${className}`} style={style}>{label}</div>
 );
 
 export const SectionHead = ({ title, linkText, to, dark = false }) => (

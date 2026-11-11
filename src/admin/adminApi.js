@@ -26,6 +26,7 @@ export const adminApi = {
 // Friendly names for the site's content blocks (anything not listed appears under "Other").
 export const BLOCKS = {
   SITE: { label: 'Radio stream & breaking banner', group: 'Site', page: '/radio', desc: 'Paste your live radio stream link here (MP3/AAC/Icecast or HLS) to enable Play / Pause, plus the breaking-news ticker.' },
+  SOCIAL: { label: 'Social media & sharing', group: 'Site', page: '/news', desc: 'Your X handle, which share buttons show on articles, and the social profile links shown in the footer.' },
   FM: { label: 'Radio frequency', group: 'Site', page: '/radio', desc: 'The FM label shown across the site.' },
   CHROME: { label: 'Header & footer text', group: 'Site', page: '/', desc: 'Top bar links, the Watch & Listen button, footer tagline, legal links and copyright.' },
   NAV: { label: 'Header menu', group: 'Site', page: '/', desc: 'Links in the main navigation.' },

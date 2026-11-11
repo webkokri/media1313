@@ -827,5 +827,40 @@
       }
     ],
     "copyright": "MEDIA 1313"
+  },
+  "SOCIAL": {
+    "handle": "",
+    "share": {
+      "facebook": true,
+      "x": true,
+      "whatsapp": true,
+      "linkedin": true,
+      "telegram": true,
+      "email": true,
+      "copy": true,
+      "native": true
+    },
+    "profiles": [
+      {
+        "network": "Facebook",
+        "url": ""
+      },
+      {
+        "network": "X",
+        "url": ""
+      },
+      {
+        "network": "Instagram",
+        "url": ""
+      },
+      {
+        "network": "YouTube",
+        "url": ""
+      },
+      {
+        "network": "TikTok",
+        "url": ""
+      }
+    ]
   }
 }

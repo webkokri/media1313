@@ -28,6 +28,7 @@ const { startAutoblog } = await import('./lib/autoblog.js');
 const { v1Routes } = await import('./routes/v1.js');
 const { corsHeaders } = await import('./lib/apiGate.js');
 const { docsHtml } = await import('./lib/apiDocs.js');
+const { seoFor, injectMeta } = await import('./lib/seo.js');
 
 const router = createRouter();
 publicRoutes(router);
@@ -67,6 +68,13 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith('/uploads/')) { if (sendFile(UPLOAD_DIR(), pathname.slice(9), req, res, 86400)) return; return fail(res, 404, 'Not found'); }
     if (sendFile(WEB, pathname, req, res)) return;
     if ((req.method === 'GET' || req.method === 'HEAD') && !path.extname(pathname)) {
+      const indexFile = path.join(WEB, 'index.html');
+      if (fs.existsSync(indexFile) && !pathname.startsWith('/admin') && pathname !== '/__pb') {            // single-page app + link-preview tags written for this URL
+        const meta = await seoFor(req, pathname);
+        const html = await injectMeta(fs.readFileSync(indexFile, 'utf8'), meta, req);
+        res.writeHead(meta.notFound ? 404 : 200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(req.method === 'HEAD' ? undefined : html);
+      }
       res.setHeader('Cache-Control', 'no-cache');
       if (sendFile(WEB, '/index.html', req, res, 0)) return;
     }

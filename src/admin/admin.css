@@ -206,3 +206,4 @@ small { color: var(--mut); display: block; margin-top: 4px; font-size: 12px; }
 /* ---------- public API ---------- */
 .ad-code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #121214; border: 1px solid var(--line2); border-radius: 6px; padding: 2px 8px; } .ad-pre { background: #09090b; border: 1px solid var(--line2); border-radius: 10px; padding: 14px; overflow: auto; font: 13px ui-monospace, Menlo, monospace; color: #d4d4d8; margin: 6px 0 14px; }
 .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; } .api-tile { border: 1px solid var(--line2); border-radius: 10px; padding: 14px; background: #0d0d0f; } .api-tile p { color: var(--mut); font-size: 13px; margin-top: 6px; }
+.ab-check { display: flex; gap: 10px; align-items: center; margin-top: 10px; cursor: pointer; } .ab-check input { accent-color: #fff; }

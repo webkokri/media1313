@@ -28,7 +28,7 @@ export default function News() {
           {list.error && <p role="alert" className="meta">Sorry — stories could not be loaded. {list.error.message}</p>}
           {!list.error && !list.data && <p className="meta" aria-live="polite">Loading…</p>}
           {lead && <Link to={articleTo(lead)} style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'center' }}>
-            <Placeholder ratio="4-3" label="Lead image 4:3" style={{ flex: '1 1 380px' }} />
+            <Placeholder ratio="4-3" label="Lead image 4:3" style={{ flex: '1 1 380px' }} src={lead.heroImage} />
             <div className="stack" style={{ flex: '1 1 320px', gap: 12 }}>
               <span className="kicker kicker--red">{cat === 'All' ? 'TOP STORY' : `${cat.toUpperCase()} · TOP STORY`}</span>
               <span className="headline" style={{ fontSize: 44, lineHeight: 1.02, color: 'var(--ink)' }}>{lead.title}</span>
@@ -43,7 +43,7 @@ export default function News() {
             <div className="grid grid-260" style={{ gap: '32px 28px' }}>
               {stories.map((s) => (
                 <Link key={s.slug} to={articleTo(s)} className="card-link">
-                  <Placeholder ratio="16-10" />
+                  <Placeholder ratio="16-10" src={s.heroImage} />
                   <span className="kicker kicker--red" style={{ fontSize: 11 }}>{s.kicker}</span>
                   <span className="headline" style={{ fontSize: 24, color: 'var(--ink)' }}>{s.title}</span>
                   <span className="meta">{articleMeta(s)}</span>

@@ -6,6 +6,7 @@ import { Equalizer, PauseIcon, PlayIcon, VideoCard } from '../components/ui.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { cleanCustomHtml, cleanHtml } from './sanitize.js';
 import { useRadio } from '../radio.jsx';
+import ShareButtons from '../components/ShareButtons.jsx';
 
 const A = ({ href, children, ...p }) => (/^(https?:|mailto:|tel:)/.test(href || '') ? <a href={href} {...p}>{children}</a> : <Link to={href || '/'} {...p}>{children}</Link>);
 const Hint = ({ children }) => <div className="pb-hint">{children}</div>;
@@ -187,6 +188,7 @@ export function WidgetBody({ node, editor }) {
     case 'testimonial': return <figure className="pb-in pb-tm">{s.image && <img className="pb-tm-img" src={s.image} alt="" />}<blockquote className="pb-tm-quote" data-pb-edit="quote">{s.quote}</blockquote><figcaption><strong data-pb-edit="name">{s.name}</strong><span> {s.role}</span></figcaption></figure>;
     case 'html': return <div className="pb-in" dangerouslySetInnerHTML={{ __html: cleanCustomHtml(s.code) }} />;
     case 'ticker': return <div className="pb-in ticker"><div className="container"><strong>{s.label || 'BREAKING'}</strong><p>{c.SITE?.breaking}</p></div></div>;
+    case 'share': return <div className="pb-in"><ShareButtons label={s.label} align={s.align} /></div>;
     case 'radio': return <RadioWidget s={s} />;
     case 'onair': return <OnAir s={s} />;
     case 'schedule': return <Schedule s={s} />;

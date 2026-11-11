@@ -3,7 +3,8 @@ import { Logo } from './ui.jsx';
 import { useContent } from '../content.jsx';
 
 export default function Footer() {
-  const { FOOTER_COLS, CHROME: C = {} } = useContent();
+  const { FOOTER_COLS, CHROME: C = {}, SOCIAL = {} } = useContent();
+  const profiles = (SOCIAL.profiles || []).filter((p) => p.url && /^https?:\/\//i.test(p.url));
   const legal = C.legalLinks || [{ label: 'Privacy', to: '/' }, { label: 'Terms', to: '/' }, { label: 'Accessibility', to: '/' }];
   return (
     <footer className="site-footer" data-edit="FOOTER_COLS">
@@ -22,6 +23,7 @@ export default function Footer() {
             ))}
           </div>
         </div>
+        {profiles.length > 0 && <div className="footer-social" aria-label="Follow us"><strong>Follow us</strong>{profiles.map((p) => <a key={p.network} href={p.url} target="_blank" rel="noopener noreferrer">{p.network}</a>)}</div>}
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} {C.copyright || 'MEDIA 1313'}</span>
           <span style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>

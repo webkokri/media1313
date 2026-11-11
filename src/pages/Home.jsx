@@ -100,7 +100,7 @@ function HomeBody({ feed }) {
         <SectionHead title="Top Stories" linkText="All news" to="/news" />
         <div className="row">
           <article className="stack" style={{ flex: '2 1 520px', minWidth: 0, gap: 14 }}>
-            <Placeholder label="Lead image 16:9" />
+            <Placeholder label="Lead image 16:9" src={lead?.heroImage} />
             {lead && <>
             <span className="kicker kicker--red">{lead.kicker}</span>
             <h3 className="headline" style={{ fontSize: 48, lineHeight: 1.02 }}><Link to={articleTo(lead)}>{lead.title}</Link></h3>
@@ -182,7 +182,7 @@ function HomeBody({ feed }) {
           {sections.map((sec) => (
             <div key={sec.name} className="stack">
               <h2 className="display" style={{ fontSize: 26, borderBottom: '3px solid var(--ink)', paddingBottom: 8, marginBottom: 14 }}>{sec.name}</h2>
-              <Placeholder ratio="16-10" style={{ marginBottom: 12 }} />
+              <Placeholder ratio="16-10" style={{ marginBottom: 12 }} src={sec.lead?.heroImage} />
               {sec.lead && <Link to={articleTo(sec.lead)} className="headline" style={{ fontSize: 22, lineHeight: 1.1, marginBottom: 10 }}>{sec.lead.title}</Link>}
               {sec.links.map((l) => (
                 <Link key={l.slug} to={articleTo(l)} style={{ fontSize: 15, fontWeight: 500, padding: '10px 0', borderTop: '1px solid var(--line)' }}>{l.title}</Link>

@@ -166,17 +166,20 @@ export function adminRoutes(r) {
     await log(c, s.enabled ? 'AI blog settings saved (on)' : 'AI blog settings saved (off)', `${s.postsPerDay}/day`); ok(c.res, await autoblog.status());
   }, 'admin');
   put('/api/admin/autoblog/key', async (c) => {
-    const b = await readJson(c.req); const provider = b.provider === 'claude' ? 'claude' : 'gemini'; const k = str(b.apiKey, 300);
+    const b = await readJson(c.req); const provider = ['claude', 'pexels'].includes(b.provider) ? b.provider : 'gemini'; const k = str(b.apiKey, 300);
+    if (provider === 'pexels') { if (!/^[A-Za-z0-9]{20,}$/.test(k)) return fail(c.res, 400, 'That does not look like a Pexels API key.'); await setSetting(autoblog.keySettingName('pexels'), k); await log(c, 'saved the Pexels API key', ''); return ok(c.res, await autoblog.status()); }
     if (provider === 'claude' && !/^sk-ant-/.test(k)) return fail(c.res, 400, 'That does not look like an Anthropic API key (it starts with sk-ant-).');
     if (provider === 'gemini' && !/^(AIza[\w-]{20,}|AQ\.[\w.-]{20,})$/.test(k)) return fail(c.res, 400, 'That does not look like a Gemini API key (it starts with AIza or AQ.). Create one in Google AI Studio.');
     await setSetting(autoblog.keySettingName(provider), k); if (provider === 'gemini') await autoblog.ensureGeminiModel(k); await log(c, `saved the ${provider === 'claude' ? 'Anthropic' : 'Gemini'} API key`, ''); ok(c.res, await autoblog.status());
   }, 'admin');
   del('/api/admin/autoblog/key', async (c) => {
-    const provider = c.query.get('provider') === 'claude' ? 'claude' : 'gemini';
+    const provider = ['claude', 'pexels'].includes(c.query.get('provider')) ? c.query.get('provider') : 'gemini';
+    if (provider === 'pexels') { await delSetting(autoblog.keySettingName('pexels')); return ok(c.res, await autoblog.status()); }
     await delSetting(autoblog.keySettingName(provider)); const cur = await autoblog.loadSettings(); if (cur.provider === provider) await autoblog.saveSettings({ ...cur, enabled: false });
     await log(c, `removed the ${provider === 'claude' ? 'Anthropic' : 'Gemini'} API key`, ''); ok(c.res, await autoblog.status());
   }, 'admin');
-  get('/api/admin/autoblog/models', async (c) => { try { ok(c.res, { models: await autoblog.listGeminiModels() }); } catch (e) { send(c.res, 200, { error: e.message, models: [] }); } }, 'admin');
+  get('/api/admin/autoblog/models', async (c) => { try { ok(c.res, { models: await autoblog.listGeminiModels(), imageModels: await autoblog.listGeminiModels(undefined, 'image') }); } catch (e) { send(c.res, 200, { error: e.message, models: [] }); } }, 'admin');
+  post('/api/admin/autoblog/test-image', async (c) => { ok(c.res, { result: await autoblog.testImage() }); }, 'admin');
   post('/api/admin/autoblog/run', async (c) => { // "write one now" — does not count toward the daily schedule
     const b = await readJson(c.req);
     try { const r = await autoblog.generateOne({ source: 'manual', topicId: b.topicId }); await log(c, 'AI wrote an article', r.title); ok(c.res, { result: r, ...(await autoblog.status()) }); }

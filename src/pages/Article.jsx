@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BookmarkIcon, LinkIcon, PauseIcon, Placeholder, PlayIcon, ShareIcon } from '../components/ui.jsx';
 import Markdown from '../markdown.jsx';
+import ShareButtons from '../components/ShareButtons.jsx';
 import { Loaded, articleTo, clock, timeAgo, useApi, useNewsletter } from '../api.jsx';
 
 export default function Article() {
@@ -22,6 +23,7 @@ export default function Article() {
 function ArticleBody({ article: a, related, latest }) {
   const [playing, setPlaying] = useState(false);
   const nl = useNewsletter('article');
+  useEffect(() => { const t = document.title; document.title = `${a.title} — MEDIA 1313`; return () => { document.title = t; }; }, [a.title]);
 
   return (
     <main className="container row" style={{ paddingTop: 32, paddingBottom: 64, gap: 56 }}>
@@ -38,11 +40,7 @@ function ArticleBody({ article: a, related, latest }) {
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--img)' }} />
             <div><p style={{ fontWeight: 700, fontSize: 15 }}>{a.author ? `By ${a.author}` : 'MEDIA 1313'}</p><p className="meta">Published {new Date(a.publishedAt).toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })} · Updated {timeAgo(a.updatedAt)}</p></div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="icon-btn" aria-label="Share"><ShareIcon /></button>
-            <button type="button" className="icon-btn" aria-label="Copy link" onClick={() => navigator.clipboard?.writeText(window.location.href)}><LinkIcon /></button>
-            <button type="button" className="icon-btn" aria-label="Save"><BookmarkIcon /></button>
-          </div>
+          <ShareButtons compact title={a.title} text={a.dek} />
         </div>
 
         {/* Listen bar — connect to a text-to-speech or recorded audio file */}
@@ -80,12 +78,17 @@ function ArticleBody({ article: a, related, latest }) {
           ))}
         </div>
 
+        <section aria-label="Share this story" style={{ borderTop: '1px solid var(--line)', paddingTop: 20 }}>
+          <h2 className="display" style={{ fontSize: 24, marginBottom: 12 }}>Share this story</h2>
+          <ShareButtons label="" title={a.title} text={a.dek} />
+        </section>
+
         <section aria-label="Related stories" style={{ borderTop: '3px solid var(--ink)', paddingTop: 16, marginTop: 20 }}>
           <h2 className="display" style={{ fontSize: 30, marginBottom: 20 }}>Related</h2>
           <div className="grid grid-200">
             {related.map((r) => (
               <Link key={r.slug} to={articleTo(r)} className="card-link">
-                <Placeholder ratio="16-10" />
+                <Placeholder ratio="16-10" src={r.heroImage} />
                 <span className="headline" style={{ fontSize: 22, lineHeight: 1.1 }}>{r.title}</span>
               </Link>
             ))}
