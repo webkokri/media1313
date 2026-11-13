@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BookmarkIcon, LinkIcon, PauseIcon, Placeholder, PlayIcon, ShareIcon } from '../components/ui.jsx';
 import Markdown from '../markdown.jsx';
+import AdSlot from '../components/AdSlot.jsx';
 import ShareButtons from '../components/ShareButtons.jsx';
 import { Loaded, articleTo, clock, timeAgo, useApi, useNewsletter } from '../api.jsx';
 
@@ -78,6 +79,7 @@ function ArticleBody({ article: a, related, latest }) {
           ))}
         </div>
 
+        <AdSlot place="article" />
         <section aria-label="Share this story" style={{ borderTop: '1px solid var(--line)', paddingTop: 20 }}>
           <h2 className="display" style={{ fontSize: 24, marginBottom: 12 }}>Share this story</h2>
           <ShareButtons label="" title={a.title} text={a.dek} />

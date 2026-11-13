@@ -385,3 +385,8 @@ html.has-radiobar body { padding-bottom: 74px; } html.has-radiobar .m1313-editbt
 .ticker-list a:hover { text-decoration: underline; }
 @keyframes ticker-scroll { to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .ticker-view { overflow-x: auto; } .ticker-track { animation: none; } .ticker-list[aria-hidden] { display: none; } }
+
+/* ad slots: take no space until an ad actually fills them */
+.ad-slot { max-width: 1200px; margin: 16px auto; padding: 0 16px; min-height: 0; text-align: center; overflow: hidden; }
+.ad-slot[hidden] { display: none; }
+.ad-slot ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }

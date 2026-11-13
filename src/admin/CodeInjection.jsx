@@ -8,6 +8,34 @@ const BOXES = [
   ['footer', 'Footer code', 'Goes just before </body> on every page. Use for chat widgets, tracking scripts that should load last, cookie banners.', '<script>/* runs after the page content */</script>'],
 ];
 
+function AdSlots({ code }) {
+  const toast = useToast(); const s = useLoad(() => adminApi.get('/ads'));
+  const [a, setA] = useState(null); const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!s.data) return;
+    const guess = (code || '').match(/client=(ca-pub-\d+)/)?.[1] || '';        // the publisher ID is usually already in the header code
+    setA({ ...s.data, client: s.data.client || guess });
+  }, [s.data]);   // eslint-disable-line react-hooks/exhaustive-deps
+  if (!a) return null;
+  const set = (k) => (e) => setA({ ...a, [k]: e.target.value });
+  const save = async () => { setBusy(true); try { const r = await adminApi.put('/ads', a); setA(r); toast('Ad slots saved — live on the website now'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(false); } };
+  return (
+    <section className="ad-panel">
+      <h2>Ad slots (AdSense display ads)</h2>
+      <p className="ad-muted">Places Google display ads on every page, and keeps them working when visitors move between pages. In AdSense create a <em>Display ad</em> unit and copy two things from its code: the publisher ID (<code>data-ad-client</code>, like ca-pub-123…) and the slot number (<code>data-ad-slot</code>). Leave a position empty to skip it. Ads only appear once Google serves them for your site — empty slots take no space.</p>
+      <label className="ab-check" style={{ marginTop: 0 }}><input type="checkbox" checked={a.enabled} onChange={(e) => setA({ ...a, enabled: e.target.checked })} /> <strong>{a.enabled ? 'Ad slots are ON' : 'Ad slots are OFF'}</strong></label>
+      <div className="ab-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: 12 }}>
+        <div><label className="ad-label">Publisher ID</label><input className="ad-input" value={a.client} onChange={set('client')} placeholder="ca-pub-1234567890123456" /></div>
+        <div><label className="ad-label">Top of every page (under the header)</label><input className="ad-input" inputMode="numeric" value={a.top} onChange={set('top')} placeholder="Slot number" /></div>
+        <div><label className="ad-label">Inside articles (before “Share this story”)</label><input className="ad-input" inputMode="numeric" value={a.article} onChange={set('article')} placeholder="Slot number" /></div>
+        <div><label className="ad-label">Bottom of every page (above the footer)</label><input className="ad-input" inputMode="numeric" value={a.bottom} onChange={set('bottom')} placeholder="Slot number" /></div>
+      </div>
+      <p className="ad-muted" style={{ marginTop: 8 }}>In the page builder you can also drop an <strong>Ad unit</strong> widget anywhere and give it its own slot number.</p>
+      <div className="ad-actions" style={{ marginTop: 12 }}><button className="ad-btn ad-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save ad slots'}</button></div>
+    </section>
+  );
+}
+
 export default function CodeInjection() {
   const s = useLoad(() => adminApi.get('/code'));
   const toast = useToast();
@@ -27,6 +55,7 @@ export default function CodeInjection() {
         <label className="ab-check" style={{ marginTop: 0 }}><input type="checkbox" checked={f.enabled} onChange={(e) => setF({ ...f, enabled: e.target.checked })} /> <strong>{f.enabled ? 'Injection is ON' : 'Injection is OFF'}</strong> <span className="ad-muted">— turn off to remove all of this code from the site without deleting it</span></label>
         <p className="ad-muted" style={{ marginTop: 10 }}>Saved code goes live on the website straight away — no rebuild needed. Visitors who already have a page open get it on their next page load. This code runs on your public pages with full access, so only paste code from sources you trust (a broken snippet can break the site; switch injection off to recover).</p>
       </section>
+      <AdSlots code={f.head} />
       {BOXES.map(([k, title, help, ph]) => (
         <section className="ad-panel" key={k}>
           <h2>{title}</h2><p className="ad-muted">{help}</p>

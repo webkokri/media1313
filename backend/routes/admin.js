@@ -6,6 +6,7 @@ import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
 import * as autoblog from '../lib/autoblog.js';
 import { getCode, saveCode } from '../lib/inject.js';
 import * as shows from '../lib/shows.js';
+import { getAds, saveAds } from '../lib/ads.js';
 import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
@@ -168,6 +169,8 @@ export function adminRoutes(r) {
     put(`/api/admin/${kind}/:id`, async (c) => { const b = await readJson(c.req); try { await save(c.params.id, b); await log(c, `updated a ${word}`, str(b.title, 120)); ok(c.res, { items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
     del(`/api/admin/${kind}/:id`, async (c) => { await shows.delRow(kind, c.params.id); await log(c, `deleted a ${word}`, c.params.id); ok(c.res, { items: await list({ all: true }) }); });
   }
+  get('/api/admin/ads', async (c) => ok(c.res, await getAds()), 'admin');
+  put('/api/admin/ads', async (c) => { try { const a = await saveAds(await readJson(c.req)); await log(c, a.enabled ? 'updated ad slots (on)' : 'updated ad slots (off)', ''); ok(c.res, a); } catch (e) { fail(c.res, e.status || 500, e.message); } }, 'admin');
   get('/api/admin/code', async (c) => ok(c.res, await getCode()), 'admin');
   put('/api/admin/code', async (c) => { const s = await saveCode(await readJson(c.req)); await log(c, s.enabled ? 'updated header/footer code' : 'updated header/footer code (switched off)', `${s.head.length + s.bodyStart.length + s.footer.length} chars`); ok(c.res, s); }, 'admin');
   get('/api/admin/autoblog', async (c) => ok(c.res, await autoblog.status()), 'admin');

@@ -5,6 +5,7 @@ import { listPublished, getPublished, homeFeed } from '../lib/articles.js';
 import { tick as autoblogTick } from '../lib/autoblog.js';
 import { publicCode } from '../lib/inject.js';
 import { listShows, listVideos } from '../lib/shows.js';
+import { getAds } from '../lib/ads.js';
 
 const cache = { 'Cache-Control': 'public, max-age=20' };
 
@@ -14,7 +15,7 @@ export function publicRoutes(r) {
   r.get('/api/home', async (c) => send(c.res, 200, await homeFeed(), cache));
   r.get('/api/shows', async (c) => send(c.res, 200, { shows: await listShows() }, { 'Cache-Control': 'no-cache' }));
   r.get('/api/videos', async (c) => send(c.res, 200, { videos: await listVideos() }, { 'Cache-Control': 'no-cache' }));
-  r.get('/api/site-code', async (c) => send(c.res, 200, await publicCode(), { 'Cache-Control': 'no-store' }));
+  r.get('/api/site-code', async (c) => send(c.res, 200, { ...(await publicCode()), ads: await getAds() }, { 'Cache-Control': 'no-store' }));
   r.get('/api/articles', async (c) => {
     const q = c.query; const limit = Math.min(Number(q.get('limit')) || 50, 200);
     const articles = await listPublished({ category: q.get('category'), limit, exclude: q.get('exclude') });

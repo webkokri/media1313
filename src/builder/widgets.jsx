@@ -8,6 +8,7 @@ import { cleanCustomHtml, cleanHtml } from './sanitize.js';
 import { useRadio } from '../radio.jsx';
 import VideoTile from '../components/VideoTile.jsx';
 import { useShows, useVideos } from '../lists.js';
+import AdSlot from '../components/AdSlot.jsx';
 import NewsTicker from '../components/NewsTicker.jsx';
 import ShareButtons from '../components/ShareButtons.jsx';
 
@@ -196,6 +197,7 @@ export function WidgetBody({ node, editor }) {
     case 'testimonial': return <figure className="pb-in pb-tm">{s.image && <img className="pb-tm-img" src={s.image} alt="" />}<blockquote className="pb-tm-quote" data-pb-edit="quote">{s.quote}</blockquote><figcaption><strong data-pb-edit="name">{s.name}</strong><span> {s.role}</span></figcaption></figure>;
     case 'html': return <div className="pb-in" dangerouslySetInnerHTML={{ __html: cleanCustomHtml(s.code) }} />;
     case 'ticker': return <div className="pb-in"><NewsTicker label={s.label} /></div>;
+    case 'ad': return <div className="pb-in">{editor ? <div className="ph" style={{ minHeight: 90, justifyContent: 'center', alignItems: 'center' }}>Ad unit {s.slot ? `(slot ${s.slot})` : '— add a slot ID'}</div> : <AdSlot slot={s.slot} />}</div>;
     case 'share': return <div className="pb-in"><ShareButtons label={s.label} align={s.align} /></div>;
     case 'radio': return <RadioWidget s={s} />;
     case 'onair': return <OnAir s={s} />;

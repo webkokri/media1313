@@ -1,3 +1,4 @@
+import AdSlot from './components/AdSlot.jsx';
 import CodeInjector from './components/CodeInjector.jsx';
 import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
@@ -50,6 +51,7 @@ export default function App() {
       <ScrollManager />
       <CodeInjector />
       <Header />
+      <AdSlot place="top" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/live" element={<Live />} />
@@ -65,6 +67,7 @@ export default function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <AdSlot place="bottom" />
       <Footer />
       <EditBar />
     </div>
