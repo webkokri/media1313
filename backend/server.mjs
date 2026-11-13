@@ -29,6 +29,7 @@ const { v1Routes } = await import('./routes/v1.js');
 const { corsHeaders } = await import('./lib/apiGate.js');
 const { docsHtml } = await import('./lib/apiDocs.js');
 const { seoFor, injectMeta } = await import('./lib/seo.js');
+const { injectCode } = await import('./lib/inject.js');
 
 const router = createRouter();
 publicRoutes(router);
@@ -71,7 +72,7 @@ const server = http.createServer(async (req, res) => {
       const indexFile = path.join(WEB, 'index.html');
       if (fs.existsSync(indexFile) && !pathname.startsWith('/admin') && pathname !== '/__pb') {            // single-page app + link-preview tags written for this URL
         const meta = await seoFor(req, pathname);
-        const html = await injectMeta(fs.readFileSync(indexFile, 'utf8'), meta, req);
+        const html = await injectCode(await injectMeta(fs.readFileSync(indexFile, 'utf8'), meta, req));
         res.writeHead(meta.notFound ? 404 : 200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
         return res.end(req.method === 'HEAD' ? undefined : html);
       }

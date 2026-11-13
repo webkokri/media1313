@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword, adminCookie, currentAdmin } from '../lib/
 import * as articles from '../lib/articles.js';
 import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
 import * as autoblog from '../lib/autoblog.js';
+import { getCode, saveCode } from '../lib/inject.js';
 import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
@@ -158,6 +159,8 @@ export function adminRoutes(r) {
   del('/api/admin/pages/:id', async (c) => { const p = await one('SELECT title FROM m1313_pages WHERE id = ?', [c.params.id]); await run('DELETE FROM m1313_pages WHERE id = ?', [c.params.id]); await log(c, 'deleted page', p?.title); ok(c.res); });
 
   // ---------- AI auto-blog (administrators only) ----------
+  get('/api/admin/code', async (c) => ok(c.res, await getCode()), 'admin');
+  put('/api/admin/code', async (c) => { const s = await saveCode(await readJson(c.req)); await log(c, s.enabled ? 'updated header/footer code' : 'updated header/footer code (switched off)', `${s.head.length + s.bodyStart.length + s.footer.length} chars`); ok(c.res, s); }, 'admin');
   get('/api/admin/autoblog', async (c) => ok(c.res, await autoblog.status()), 'admin');
   put('/api/admin/autoblog', async (c) => {
     const b = await readJson(c.req); const s = await autoblog.saveSettings(b);

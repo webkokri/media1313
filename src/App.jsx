@@ -1,3 +1,4 @@
+import CodeInjector from './components/CodeInjector.jsx';
 import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx';
@@ -42,11 +43,12 @@ export default function App() {
   if (pathname === '/__pb' && inBuilderFrame) return <Suspense fallback={null}><CanvasEditor /></Suspense>;
   // A published builder page replaces the built-in page at the same address ("home" = "/").
   const slug = pathname === '/' ? 'home' : pathname.replace(/^\/|\/$/g, '');
-  if (_pages.includes(slug)) return <><ScrollManager /><BuilderPage slug={slug} /><EditBar /></>;
+  if (_pages.includes(slug)) return <><ScrollManager /><CodeInjector /><BuilderPage slug={slug} /><EditBar /></>;
   const dark = DARK_PAGES.includes(pathname);
   return (
     <div className={dark ? 'app app--dark' : 'app'}>
       <ScrollManager />
+      <CodeInjector />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
