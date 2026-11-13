@@ -15,3 +15,9 @@ SetEnv GOMAXPROCS 2
 SetEnv UV_THREADPOOL_SIZE 2
 SetEnv RAYON_NUM_THREADS 2
 SetEnv TOKIO_WORKER_THREADS 2
+
+# Send the home page through the Node app instead of serving index.html as a plain file, so the code injected from
+# Admin -> Code injection (AdSense, Analytics, verification tags) and the link-preview tags are in the HTML that Google reads.
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(index\.html)?$ /__home [L]

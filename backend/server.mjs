@@ -54,6 +54,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   const url = new URL(req.url, 'http://localhost');
   let pathname; try { pathname = decodeURIComponent(url.pathname); } catch { return fail(res, 400, 'Bad request'); }
+  if (pathname === '/__home') pathname = '/';                                           // the home page is routed here by .htaccess (see public/.htaccess)
   try {
     if (pathname === '/api/docs' || pathname === '/api/docs/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }); return res.end(docsHtml()); }
     if (pathname.startsWith('/api/v1')) {                                           // public API: CORS preflight + JSON errors in the v1 shape
