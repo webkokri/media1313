@@ -788,7 +788,7 @@
     "title": "1313 TV · Channel stream",
     "streamUrl": "",
     "poster": "",
-    "autoplay": false
+    "autoplay": true
   },
   "CHROME": {
     "tvLive": "1313 TV live now",

@@ -9,6 +9,9 @@ import { Equalizer, PauseIcon, PlayIcon } from './components/ui.jsx';
  */
 const RadioCtx = createContext(null);
 export const useRadio = () => useContext(RadioCtx);
+const PREF = 'm1313_radio';                                   // '' = play on every page · 'paused' = visitor paused it · 'closed' = visitor closed the bar
+const getPref = () => { try { return localStorage.getItem(PREF) || ''; } catch { return ''; } };
+const setPref = (v) => { try { v ? localStorage.setItem(PREF, v) : localStorage.removeItem(PREF); } catch { /* private mode */ } };
 const isHls = (u) => /\.m3u8(\?|#|$)/i.test(u);
 
 export function RadioProvider({ children }) {
@@ -19,14 +22,18 @@ export function RadioProvider({ children }) {
   const [status, setStatus] = useState('idle');           // idle | loading | playing | paused | error
   const [error, setError] = useState('');
   const [volume, setVolumeState] = useState(() => { try { return Number(localStorage.getItem('m1313_vol') ?? 80); } catch { return 80; } });
+  const [blocked, setBlocked] = useState(false);          // the browser refused to autoplay — it will start on the visitor's first tap
   const [started, setStarted] = useState(false);          // show the mini player once someone has pressed play
 
   const el = () => { if (!audio.current && typeof Audio !== 'undefined') { audio.current = new Audio(); audio.current.preload = 'none'; audio.current.volume = volume / 100; } return audio.current; };
   const teardown = useCallback(() => { if (hls.current) { hls.current.destroy(); hls.current = null; } const a = audio.current; if (a) { a.pause(); a.removeAttribute('src'); a.load(); } }, []);
   const fail = useCallback((m) => { teardown(); setError(m); setStatus('error'); }, [teardown]);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (opts) => {
+    const auto = opts?.auto === true;
     const a = el(); if (!a) return;
+    if (!auto) { setPref(''); }
+    setBlocked(false);
     if (!url) { setStarted(true); fail('The live radio stream will be available soon.'); return; }
     setStarted(true); setError(''); setStatus('loading'); teardown();
     const offline = () => (/^http:/i.test(url) && location.protocol === 'https:' ? 'This stream link starts with http:// — it must be https:// to play on this secure site.' : 'The radio stream is offline or the link can’t be played right now.');
@@ -42,13 +49,15 @@ export function RadioProvider({ children }) {
       await a.play();
     } catch (e) {
       if (e?.name === 'AbortError') return;                  // a newer start replaced this one
+      if (e?.name === 'NotAllowedError' && auto) { teardown(); setStatus('paused'); setBlocked(true); return; }   // autoplay refused: wait for a tap
       fail(e?.name === 'NotAllowedError' ? 'Tap play again to start the radio.' : offline());
     }
   }, [url, fail, teardown]);
 
-  const pause = useCallback(() => { teardown(); setStatus('paused'); }, [teardown]);   // stopping the connection means resuming rejoins the live edge
+  const pause = useCallback(() => { setPref('paused'); setBlocked(false); teardown(); setStatus('paused'); }, [teardown]);   // stopping the connection means resuming rejoins the live edge
   const toggle = useCallback(() => { (status === 'playing' || status === 'loading') ? pause() : start(); }, [status, pause, start]);
-  const stop = useCallback(() => { teardown(); setStatus('idle'); setStarted(false); setError(''); }, [teardown]);
+  const stop = useCallback(() => { teardown(); setStatus('idle'); setStarted(false); setError(''); setBlocked(false); }, [teardown]);
+  const close = useCallback(() => { setPref('closed'); stop(); }, [stop]);
   const setVolume = useCallback((v) => { setVolumeState(v); if (audio.current) audio.current.volume = v / 100; try { localStorage.setItem('m1313_vol', String(v)); } catch { /* ignore */ } }, []);
 
   useEffect(() => {
@@ -61,6 +70,22 @@ export function RadioProvider({ children }) {
   useEffect(() => { if (status !== 'idle') stop(); /* the stream link changed in the admin */ // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
+  // Play on every page: the radio starts as soon as the site opens (or on the first tap if the browser blocks autoplay)
+  // and keeps playing while visitors move between pages, until they pause or close it.
+  useEffect(() => {
+    if (!url || window.parent !== window || /^\/(admin|__pb)/.test(location.pathname)) return undefined;
+    const pref = getPref(); if (pref === 'closed') return undefined;
+    setStarted(true);
+    if (pref === 'paused') { setStatus('paused'); return undefined; }
+    let armed = false;
+    const kick = (e) => { if (e?.target?.closest?.('[data-no-radio-kick]')) return; disarm(); start({ auto: true }); };
+    const disarm = () => { if (!armed) return; armed = false; for (const k of ['click', 'keydown', 'touchend']) window.removeEventListener(k, kick, true); };
+    armed = true; for (const k of ['click', 'keydown', 'touchend']) window.addEventListener(k, kick, true);
+    start({ auto: true }).then(() => { if (!audio.current?.paused) disarm(); });
+    return disarm;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
+
   // lock-screen / notification controls on phones
   useEffect(() => {
     if (!('mediaSession' in navigator) || status === 'idle') return;
@@ -71,7 +96,7 @@ export function RadioProvider({ children }) {
     } catch { /* not supported */ }
   }, [status, NOW_ON_RADIO.title, start, pause, stop]);
 
-  const value = useMemo(() => ({ url, status, error, volume, toggle, start, pause, stop, setVolume, playing: status === 'playing', loading: status === 'loading', hasStream: !!url }), [url, status, error, volume, toggle, start, pause, stop, setVolume]);
+  const value = useMemo(() => ({ url, status, error, volume, blocked, toggle, start, pause, stop, close, setVolume, playing: status === 'playing', loading: status === 'loading', hasStream: !!url }), [url, status, error, volume, toggle, start, pause, stop, setVolume, blocked, close]);
   return <RadioCtx.Provider value={value}>{children}{started && <RadioBar />}</RadioCtx.Provider>;
 }
 
@@ -86,11 +111,11 @@ function RadioBar() {
       </button>
       <div className="radiobar-text">
         <strong>1313 Radio · Live</strong>
-        <span>{r.status === 'error' ? r.error : r.loading ? 'Connecting…' : NOW_ON_RADIO.title}</span>
+        <span>{r.status === 'error' ? r.error : r.blocked ? 'Tap anywhere to start the radio' : r.loading ? 'Connecting…' : NOW_ON_RADIO.title}</span>
       </div>
       {r.playing && <Equalizer height={22} bars={4} color="var(--amber)" />}
       <input className="radiobar-vol" type="range" min="0" max="100" value={r.volume} onChange={(e) => r.setVolume(+e.target.value)} aria-label="Volume" />
-      <button type="button" className="radiobar-x" onClick={r.stop} aria-label="Close radio player">✕</button>
+      <button type="button" className="radiobar-x" onClick={r.close} aria-label="Close radio player">✕</button>
     </div>
   );
 }

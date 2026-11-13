@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PlayIcon } from './ui.jsx';
+import { useRadio } from '../radio.jsx';
 
 /**
  * Video player for the live TV stream. Accepts:
@@ -19,13 +20,17 @@ export default function VideoPlayer({ src, poster, autoPlay = false, muted = fal
   const video = useRef();
   const [started, setStarted] = useState(false);
   const [error, setError] = useState('');
+  const [silent, setSilent] = useState(muted);               // autoplay is only allowed by browsers while muted
+  const radio = useRadio();
 
-  useEffect(() => { setStarted(autoPlay && !!url); setError(''); }, [url, autoPlay]);
+  useEffect(() => { setStarted(autoPlay && !!url); setError(''); setSilent(muted); }, [url, autoPlay, muted]);
+  const unmute = () => { if (video.current) video.current.muted = false; setSilent(false); radio?.pause?.(); };   // the video's sound replaces the radio
 
   useEffect(() => {
     if (!started || !url || yt) return undefined;
     const el = video.current; if (!el) return undefined;
     let hls; let dead = false;
+    el.muted = muted;                                  // set as a property too: React's muted attribute is unreliable and autoplay needs it
     const fail = (m) => { if (!dead) setError(m); };
     const play = () => el.play().catch(() => { /* needs a tap — the native controls are visible */ });
     const offline = () => (/^http:/i.test(url) && location.protocol === 'https:' ? 'The stream link must start with https:// to play on this secure site.' : 'The stream is offline or the link cannot be reached.');
@@ -63,9 +68,10 @@ export default function VideoPlayer({ src, poster, autoPlay = false, muted = fal
   );
   if (yt) return <iframe title="Live stream" style={{ ...fill, border: 0 }} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0&modestbranding=1${muted ? '&mute=1' : ''}`} />;
   return (
-    <>
+    <div data-no-radio-kick style={fill}>
       <video ref={video} controls playsInline muted={muted} poster={poster || undefined} style={{ ...fill, background: '#000', objectFit: 'contain' }} onError={() => setError(isHls(url) ? 'The stream is offline or the link cannot be reached.' : 'The video could not be played.')} />
+      {silent && !error && <button type="button" onClick={unmute} style={{ position: 'absolute', top: 12, right: 12, zIndex: 2, border: 0, borderRadius: 999, padding: '8px 14px', background: 'rgba(14,16,20,.82)', color: '#fff', font: '700 13px var(--sans, inherit)', cursor: 'pointer' }}>🔇 Tap to unmute</button>}
       {error && <div role="alert" style={{ ...fill, display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24, background: 'rgba(14,16,20,.88)', color: '#fff', fontSize: 15 }}>{error}</div>}
-    </>
+    </div>
   );
 }
