@@ -11,7 +11,7 @@ function live(node) {
 function add(html, where) {
   if (!html || !html.trim()) return;
   const t = document.createElement('template'); t.innerHTML = html;
-  const nodes = [...t.content.childNodes].map(live);
+  const nodes = [...t.content.childNodes].filter((n) => !(n.nodeType === 1 && n.tagName === 'SCRIPT' && n.getAttribute('src') && document.querySelector(`script[src="${CSS.escape ? n.getAttribute('src').replace(/"/g, '\\"') : n.getAttribute('src')}"]`))).map(live);
   if (where === 'head') nodes.forEach((n) => document.head.appendChild(n));
   else if (where === 'bodyStart') nodes.reverse().forEach((n) => document.body.insertBefore(n, document.body.firstChild));
   else nodes.forEach((n) => document.body.appendChild(n));

@@ -11,9 +11,17 @@ export async function saveCode(input) {
   const next = { enabled: input.enabled !== false, head: clip(input.head ?? cur.head), bodyStart: clip(input.bodyStart ?? cur.bodyStart), footer: clip(input.footer ?? cur.footer), updatedAt: Date.now() };
   await setSetting('code_injection', next); return next;
 }
+/** The same external script pasted in two boxes (e.g. the AdSense loader in header AND body) must load only once. */
+const SCRIPT_SRC = /<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>\s*<\/script>/gi;
+function dedupe(c) {
+  const seen = new Set(); const out = { ...c };
+  for (const k of ['head', 'bodyStart', 'footer']) out[k] = String(c[k] || '').replace(SCRIPT_SRC, (m, src) => { const key = src.replace(/&amp;/g, '&'); if (seen.has(key)) return ''; seen.add(key); return m; });
+  return out;
+}
 /** What the public site needs (nothing when switched off). */
 export async function publicCode() {
   const c = await getCode();
+  if (c.enabled) Object.assign(c, dedupe(c));
   return c.enabled ? { enabled: true, head: c.head, bodyStart: c.bodyStart, footer: c.footer, version: c.updatedAt } : { enabled: false, head: '', bodyStart: '', footer: '', version: c.updatedAt };
 }
 /** Write the snippets into a server-rendered HTML page. A marker tells the browser it does not need to add them again. */
