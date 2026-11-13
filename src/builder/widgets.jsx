@@ -6,6 +6,8 @@ import { Equalizer, PauseIcon, PlayIcon, VideoCard } from '../components/ui.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { cleanCustomHtml, cleanHtml } from './sanitize.js';
 import { useRadio } from '../radio.jsx';
+import VideoTile from '../components/VideoTile.jsx';
+import { useShows, useVideos } from '../lists.js';
 import NewsTicker from '../components/NewsTicker.jsx';
 import ShareButtons from '../components/ShareButtons.jsx';
 
@@ -142,10 +144,15 @@ function Schedule({ s }) {
   return <div className="pb-in">{rows.map((r) => <div key={r[0] + r[1]} className="list-row list-row--paper"><span className="time-col" style={{ width: 84 }}>{r[0]}</span><span><span className="row-title">{r[1]}</span><span className="row-sub">{r[2]}</span></span></div>)}</div>;
 }
 
+function Videos({ s }) {
+  const { videos } = useVideos();
+  return <div className="pb-in"><div className="pb-grid">{videos.slice(0, +s.count || 4).map((v) => <VideoTile key={v.id} video={v} />)}</div></div>;
+}
+
 function Shows({ s }) {
-  const { SHOWS } = useContent(); const HREF = { TV: '/tv', RADIO: '/radio', PODCAST: '/podcasts' };
+  const { shows: SHOWS } = useShows(); const HREF = { TV: '/tv', RADIO: '/radio', PODCAST: '/podcasts' };
   const list = (SHOWS || []).filter((x) => s.type === 'All' || x.type === s.type);
-  return <div className="pb-in"><div className="pb-grid">{list.map((x) => <Link key={x.title} to={HREF[x.type]} className="pb-show" style={{ background: x.bg }}><span className="kicker">{x.type}</span><strong className="display">{x.title}</strong><span>{x.when}</span></Link>)}</div></div>;
+  return <div className="pb-in"><div className="pb-grid">{list.map((x) => <Link key={x.id || x.title} to={HREF[x.type]} className="pb-show" style={{ background: x.image ? `center / cover url(${x.image})` : x.bg }}><span className="kicker">{x.type}</span><strong className="display">{x.title}</strong><span>{x.when}</span></Link>)}</div></div>;
 }
 
 /** The inner content of one widget. The wrapper (class, data attributes) is added by Render.jsx. */
@@ -196,7 +203,7 @@ export function WidgetBody({ node, editor }) {
     case 'articles': return <Articles s={s} editor={editor} />;
     case 'shows': return <Shows s={s} />;
     case 'podcasts': return <div className="pb-in"><div className="pb-grid">{(c.PODCASTS || []).slice(0, +s.count || 3).map((p) => <Link key={p.title} to="/podcasts" className="pb-show" style={{ background: p.bg }}><span className="kicker">PODCAST</span><strong className="display">{p.title}</strong><span>{p.desc}</span></Link>)}</div></div>;
-    case 'videos': return <div className="pb-in"><div className="pb-grid">{(c.VIDEOS || []).slice(0, +s.count || 4).map((v) => <VideoCard key={v.title} title={v.title} kicker={v.show} duration={v.dur} />)}</div></div>;
+    case 'videos': return <Videos s={s} />;
     case 'newsletter': return <Newsletter s={s} />;
     case 'contact': return <ContactForm s={s} />;
     default: return <Hint>Unknown widget “{node.type}”</Hint>;

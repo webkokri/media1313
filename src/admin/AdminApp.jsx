@@ -10,6 +10,8 @@ const PageBuilder = lazy(() => import('./PageBuilder.jsx'));
 const PagesList = lazy(() => import('./PagesList.jsx'));
 const AutoBlog = lazy(() => import('./AutoBlog.jsx'));
 const CodeInjection = lazy(() => import('./CodeInjection.jsx'));
+const ShowsManager = lazy(() => import('./ShowsVideos.jsx').then((m) => ({ default: m.ShowsManager })));
+const VideosManager = lazy(() => import('./ShowsVideos.jsx').then((m) => ({ default: m.VideosManager })));
 const PublicApi = lazy(() => import('./PublicApi.jsx'));
 
 const I = ({ d }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
@@ -22,6 +24,8 @@ const NAV = [
   ['/admin/code', 'Code injection', 'M8 9l-4 3 4 3M16 9l4 3-4 3M13 6l-2 12', false, null, 'admin'],
   ['/admin/api', 'Public API', 'M8 9l-4 3 4 3M16 9l4 3-4 3M14 5l-4 14', false, null, 'admin'],
   ['/admin/content', 'Site content', 'M3 5h18v6H3zM3 15h8v4H3zM15 15h6v4h-6z'],
+  ['/admin/shows', 'Shows', 'M4 6h16v10H4zM8 20h8M12 16v4M10 9l5 2-5 2z'],
+  ['/admin/videos', 'Videos', 'M3 5h14v14H3zM17 10l4-2v8l-4-2M7 9l4 3-4 3z'],
   ['/admin/media', 'Media', 'M3 5h18v14H3zM8 11l3 3 2-2 4 4M8.5 9.5h.01'],
   ['/admin/leads', 'Enquiries', 'M3 6h18v12H3zM3 7l9 7 9-7', false, 'unread'],
   ['/admin/subscribers', 'Subscribers', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6'],
@@ -114,6 +118,8 @@ function Shell() {
           <Route path="content" element={<ContentList />} />
           <Route path="content/:key" element={<ContentEdit />} />
           <Route path="media" element={<MediaPage />} />
+          <Route path="shows" element={<Suspense fallback={null}><ShowsManager /></Suspense>} />
+          <Route path="videos" element={<Suspense fallback={null}><VideosManager /></Suspense>} />
           <Route path="leads" element={<Leads />} />
           <Route path="subscribers" element={<Subscribers />} />
           <Route path="requests" element={<SongRequests />} />

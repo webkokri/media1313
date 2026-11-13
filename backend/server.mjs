@@ -36,6 +36,7 @@ publicRoutes(router);
 adminRoutes(router);
 v1Routes(router);
 await ensureSchema();
+await (await import('./lib/shows.js')).runMigrations().catch((e) => console.error('migration failed:', e.message));
 
 const WEB = path.resolve(process.env.WEB_ROOT || path.join(here, '..', 'dist'));
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.pdf': 'application/pdf', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.txt': 'text/plain', '.xml': 'application/xml' };

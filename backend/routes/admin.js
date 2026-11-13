@@ -5,6 +5,7 @@ import * as articles from '../lib/articles.js';
 import { saveUpload, removeUpload, MAX_UPLOAD } from '../lib/media.js';
 import * as autoblog from '../lib/autoblog.js';
 import { getCode, saveCode } from '../lib/inject.js';
+import * as shows from '../lib/shows.js';
 import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
@@ -159,6 +160,14 @@ export function adminRoutes(r) {
   del('/api/admin/pages/:id', async (c) => { const p = await one('SELECT title FROM m1313_pages WHERE id = ?', [c.params.id]); await run('DELETE FROM m1313_pages WHERE id = ?', [c.params.id]); await log(c, 'deleted page', p?.title); ok(c.res); });
 
   // ---------- AI auto-blog (administrators only) ----------
+  for (const kind of ['shows', 'videos']) {
+    const list = kind === 'shows' ? shows.listShows : shows.listVideos; const save = kind === 'shows' ? shows.saveShow : shows.saveVideo; const word = kind === 'shows' ? 'show' : 'video';
+    get(`/api/admin/${kind}`, async (c) => ok(c.res, { items: await list({ all: true }) }));
+    post(`/api/admin/${kind}`, async (c) => { const b = await readJson(c.req); try { const id = await save(null, b); await log(c, `added a ${word}`, str(b.title, 120)); ok(c.res, { id, items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
+    put(`/api/admin/${kind}/order`, async (c) => { const b = await readJson(c.req); if (Array.isArray(b.ids)) await shows.reorder(kind, b.ids.slice(0, 500)); ok(c.res, { items: await list({ all: true }) }); });
+    put(`/api/admin/${kind}/:id`, async (c) => { const b = await readJson(c.req); try { await save(c.params.id, b); await log(c, `updated a ${word}`, str(b.title, 120)); ok(c.res, { items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
+    del(`/api/admin/${kind}/:id`, async (c) => { await shows.delRow(kind, c.params.id); await log(c, `deleted a ${word}`, c.params.id); ok(c.res, { items: await list({ all: true }) }); });
+  }
   get('/api/admin/code', async (c) => ok(c.res, await getCode()), 'admin');
   put('/api/admin/code', async (c) => { const s = await saveCode(await readJson(c.req)); await log(c, s.enabled ? 'updated header/footer code' : 'updated header/footer code (switched off)', `${s.head.length + s.bodyStart.length + s.footer.length} chars`); ok(c.res, s); }, 'admin');
   get('/api/admin/autoblog', async (c) => ok(c.res, await autoblog.status()), 'admin');

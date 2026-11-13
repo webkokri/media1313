@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import VideoTile from '../components/VideoTile.jsx';
+import { useVideos } from '../lists.js';
 import { Placeholder, PillTabs, PlayIcon, VideoCard } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
 import { articleMeta, articleTo, timeAgo, useApi } from '../api.jsx';
 
 export default function News() {
-  const { NEWS_CATEGORIES, VIDEOS } = useContent();
+  const { NEWS_CATEGORIES } = useContent();
+  const { videos } = useVideos();
   const [cat, setCat] = useState('All');
   const [pageSize, setPageSize] = useState(7); // 1 lead + 6 cards; "Load more" adds 6
   const list = useApi(`/articles?category=${encodeURIComponent(cat)}&limit=${pageSize + 1}`);
@@ -52,13 +55,13 @@ export default function News() {
             </div>
           )}
 
-          <div data-edit="VIDEOS" className="box box--night stack" style={{ gap: 20, padding: 28 }}>
+          <div className="box box--night stack" style={{ gap: 20, padding: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <h2 className="display" style={{ fontSize: 30 }}>News on video</h2>
               <Link to="/tv" style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>More on 1313 TV</Link>
             </div>
             <div className="grid grid-200" style={{ gap: 20 }}>
-              {VIDEOS.slice(0, 3).map((v) => <VideoCard key={v.title} dark title={v.title} duration={v.dur} />)}
+              {videos.slice(0, 3).map((v) => <VideoTile key={v.id} dark video={v} />)}
             </div>
           </div>
 

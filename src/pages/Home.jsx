@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowIcon, Equalizer, LiveBadge, PauseIcon, Placeholder, PlayIcon, SectionHead, Segmented, VideoCard, VideoIcon } from '../components/ui.jsx';
 import { useContent } from '../content.jsx';
+import VideoTile from '../components/VideoTile.jsx';
+import { useVideos } from '../lists.js';
 import NewsTicker from '../components/NewsTicker.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { useRadio } from '../radio.jsx';
@@ -60,7 +62,8 @@ export default function Home() {
 }
 
 function HomeBody({ feed }) {
-  const { FM, NOW_ON_RADIO, NOW_ON_TV, PLAYER, PODCASTS, SITE, VIDEOS } = useContent();
+  const { FM, NOW_ON_RADIO, NOW_ON_TV, PLAYER, PODCASTS, SITE } = useContent();
+  const { videos } = useVideos();
   const radioMain = useRadio();
   const { lead, secondary, latest, sections } = feed;
   const nl = useNewsletter('home');
@@ -136,10 +139,10 @@ function HomeBody({ feed }) {
       </section>
 
       {/* Watch */}
-      <section data-edit="VIDEOS" aria-label="Watch" className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
+      <section aria-label="Watch" className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
         <SectionHead title="Watch" linkText="All video & shows" to="/shows" />
         <div className="grid grid-220">
-          {VIDEOS.map((v) => <VideoCard key={v.title} title={v.title} kicker={v.show} duration={v.dur} />)}
+          {videos.slice(0, 8).map((v) => <VideoTile key={v.id} video={v} />)}
         </div>
       </section>
 

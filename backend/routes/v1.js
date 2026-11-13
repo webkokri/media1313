@@ -6,6 +6,7 @@ import { send, readJson, str, isEmail, slugify } from '../lib/http.js';
 import { hashPassword, verifyPassword, sign, memberId } from '../lib/auth.js';
 import { corsHeaders, gate } from '../lib/apiGate.js';
 import { markdownToHtml } from '../lib/markdown.js';
+import { listShows, listVideos } from '../lib/shows.js';
 
 const VERSION = '1.0.0';
 const LIVE = "status = 'published' AND (published_at IS NULL OR published_at <= ?)";
@@ -121,7 +122,7 @@ export const ENDPOINTS = [
       const limit = Math.min(20, Math.max(1, parseInt(c.query.get('limit')) || 10)); const like = `%${term.toLowerCase().replace(/[%_]/g, '')}%`;
       const rows = await all(`SELECT ${COLS} FROM m1313_articles WHERE ${LIVE} AND (LOWER(title) LIKE ? OR LOWER(dek) LIKE ? OR LOWER(content) LIKE ?) ORDER BY published_at DESC LIMIT ${limit}`, [now(), like, like, like]);
       const b = await blocks(); const has = (x) => `${x.title} ${x.genre || ''} ${x.desc || ''}`.toLowerCase().includes(term.toLowerCase());
-      return ok(c, { query: term, articles: rows.map((r) => articleOut(r, c.o)), shows: (b.SHOWS || []).filter(has).slice(0, limit).map(showOut), podcasts: (b.PODCASTS || []).filter(has).slice(0, limit).map(podcastOut) }, {}, 30);
+      return ok(c, { query: term, articles: rows.map((r) => articleOut(r, c.o)), shows: (await listShows()).filter(has).slice(0, limit).map(showOut), podcasts: (b.PODCASTS || []).filter(has).slice(0, limit).map(podcastOut) }, {}, 30);
     } },
 
   /* ---- live & programming ---- */
@@ -143,10 +144,10 @@ export const ENDPOINTS = [
       return ok(c, data, {}, 120);
     } },
   { m: 'GET', p: '/api/v1/shows', tag: 'Live', summary: 'Shows', desc: 'All TV, radio and podcast programmes.', params: [Q('type', '`tv`, `radio` or `podcast`.', 'string', { enum: ['tv', 'radio', 'podcast'] })],
-    h: async (c) => { const t = (c.query.get('type') || '').toUpperCase(); return ok(c, ((await blocks()).SHOWS || []).filter((s) => !t || s.type === t).map(showOut), {}, 300); } },
+    h: async (c) => { const t = (c.query.get('type') || '').toUpperCase(); return ok(c, (await listShows()).filter((s) => !t || s.type === t).map(showOut), {}, 120); } },
   { m: 'GET', p: '/api/v1/podcasts', tag: 'Live', summary: 'Podcasts', desc: 'Podcast shows.', h: async (c) => ok(c, ((await blocks()).PODCASTS || []).map(podcastOut), {}, 300) },
   { m: 'GET', p: '/api/v1/episodes', tag: 'Live', summary: 'Latest podcast episodes', desc: 'Newest podcast episodes.', h: async (c) => ok(c, ((await blocks()).EPISODES || []).map((e) => ({ id: slugify(`${e.show}-${e.title}`), show: e.show, title: e.title, color: e.bg })), {}, 300) },
-  { m: 'GET', p: '/api/v1/videos', tag: 'Live', summary: 'Featured videos', desc: 'Video cards from the home page.', h: async (c) => ok(c, ((await blocks()).VIDEOS || []).map((v) => ({ id: slugify(v.title), show: v.show, title: v.title, duration: v.dur })), {}, 300) },
+  { m: 'GET', p: '/api/v1/videos', tag: 'Live', summary: 'Featured videos', desc: 'Videos added in the admin (newest first), with a playable link (HLS, MP4 or YouTube) when one is set.', h: async (c) => ok(c, (await listVideos()).map((v) => ({ id: v.id, show: v.show, title: v.title, duration: v.dur, video_url: v.url || null, video_type: v.url ? (/\.m3u8/i.test(v.url) ? 'hls' : /youtu/i.test(v.url) ? 'youtube' : 'file') : null, poster: absUrl(v.poster, c.o) })), {}, 120) },
   { m: 'GET', p: '/api/v1/sports', tag: 'Live', summary: 'Sports', desc: 'Scores strip, standings, top story and clips.', h: async (c) => ok(c, (await blocks()).SPORTS || {}, {}, 60) },
 
   /* ---- site ---- */
@@ -201,7 +202,7 @@ export const ENDPOINTS = [
     h: async (c) => { const id = memberOr401(c); await run('DELETE FROM m1313_podcast_follows WHERE member_id = ? AND podcast = ?', [id, str(c.params.podcast, 200)]); return reply(c, 200, { data: { following: false } }); } },
 ];
 
-const showOut = (s) => ({ id: slugify(s.title), title: s.title, type: String(s.type || '').toLowerCase(), genre: s.genre || '', schedule: s.when || '', color: s.bg || null });
+const showOut = (s) => ({ id: s.id || slugify(s.title), title: s.title, type: String(s.type || '').toLowerCase(), genre: s.genre || '', host: s.host || '', description: s.description || '', schedule: s.when || '', image: s.image || null, color: s.bg || null });
 const podcastOut = (p) => ({ id: slugify(p.title), title: p.title, description: p.desc || '', color: p.bg || null });
 const nextOut = (r) => ({ time: r.time, title: r.title, description: r.sub || '', tag: r.tag || null });
 
