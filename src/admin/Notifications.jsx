@@ -11,6 +11,8 @@ export default function Notifications() {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState({ topic: 'all', title: '', body: '', url: '/' });
   const [testOn, setTestOn] = useState(false);
+  const [fbJson, setFbJson] = useState('');
+  const [fbTest, setFbTest] = useState(null);
   useEffect(() => { if (d) { setF(d.settings); setOrig(JSON.stringify(d.settings)); } }, [d?.settings]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { currentSubscription().then((x) => setTestOn(!!x)); }, []);
   const dirty = f && JSON.stringify(f) !== orig;
@@ -35,7 +37,11 @@ export default function Notifications() {
     try { if (testOn) { await disablePush(); setTestOn(false); toast('This browser no longer gets test notifications'); } else { await enablePush(['test']); setTestOn(true); toast('Done — pick “Test (this browser only)” below and press Send'); } s.reload(); }
     catch (e) { toast(e.message, 'error'); } finally { setBusy(''); }
   };
-  const per = d.stats.perTopic;
+  const per = d.stats.perTopic; const fb = d.firebase || { connected: false };
+  const saveFb = async () => { setBusy('fb'); setFbTest(null); try { await adminApi.put('/push/firebase', { json: fbJson }); setFbJson(''); s.reload(); toast('Firebase connected'); } catch (e) { toast(e.message, 'error'); } finally { setBusy(''); } };
+  const removeFb = async () => { if (!window.confirm('Disconnect Firebase? Mobile apps will stop receiving notifications.')) return; await adminApi.del('/push/firebase'); setFbTest(null); s.reload(); toast('Firebase disconnected'); };
+  const testFb = async () => { setBusy('fbtest'); try { setFbTest(await adminApi.post('/push/firebase/test', {})); } catch (e) { setFbTest({ ok: false, error: e.message }); } finally { setBusy(''); } };
+  const readFile = (e) => { const file = e.target.files?.[0]; if (file) file.text().then(setFbJson); };
 
   return (
     <Page title="Notifications" sub="Browser push notifications — visitors opt in with the bell in the site header."
@@ -43,7 +49,7 @@ export default function Notifications() {
       <section className={`ad-panel ab-status ${f.enabled ? 'on' : ''}`}>
         <div>
           <h2>{f.enabled ? 'Notifications are ON' : 'Notifications are OFF'}</h2>
-          <p className="ad-muted">{d.stats.total} {d.stats.total === 1 ? 'device is' : 'devices are'} subscribed. When off, the bell is hidden from visitors and nothing is sent.</p>
+          <p className="ad-muted">{d.stats.total} {d.stats.total === 1 ? 'device is' : 'devices are'} subscribed ({d.stats.web} website browsers, {d.stats.devices} mobile app devices). When off, the bell is hidden from visitors and nothing is sent.</p>
         </div>
         <button className={`ab-switch ${f.enabled ? 'on' : ''}`} role="switch" aria-checked={f.enabled} aria-label="Turn notifications on or off" disabled={busy === 'save'} onClick={() => { setF({ ...f, enabled: !f.enabled }); save({ enabled: !f.enabled }, f.enabled ? 'Notifications turned off' : 'Notifications turned on'); }}><i /></button>
       </section>
@@ -71,6 +77,26 @@ export default function Notifications() {
         </div>
         <label className="ad-label" style={{ marginTop: 14 }}>Contact address for push services (optional)</label>
         <input className="ad-input" style={{ maxWidth: 360 }} value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} placeholder="mailto:info@media1313.com" />
+      </section>
+
+      <section className="ad-panel">
+        <h2>Mobile apps (Firebase)</h2>
+        <p className="ad-muted">Connect your Firebase project so the same notifications reach your Android and iOS apps. Apps register their device with <code>POST /api/v1/push/devices</code> (see the API docs) and choose the same topics as the website bell.</p>
+        {fb.connected ? (
+          <p>Connected to <Badge kind="ok">{fb.projectId}</Badge> <span className="ad-muted">as {fb.clientEmail} (key …{fb.keyId}){fb.source === 'server' ? ' — set on the server' : ''}</span> {fb.source !== 'server' && <button className="ad-btn sm ghost danger" onClick={removeFb}>Disconnect</button>}</p>
+        ) : <p className="ad-muted">Not connected. In the Firebase console open Project settings → Service accounts → <em>Generate new private key</em>, then paste the whole file below (or choose it).</p>}
+        {fb.source !== 'server' && <>
+          <textarea className="ad-input ci-code" rows={5} spellCheck={false} placeholder={'{ "type": "service_account", "project_id": "…", … }'} value={fbJson} onChange={(e) => setFbJson(e.target.value)} />
+          <div className="ad-actions" style={{ marginTop: 10, alignItems: 'center' }}>
+            <button className="ad-btn ad-primary" disabled={!fbJson.trim() || busy === 'fb'} onClick={saveFb}>{busy === 'fb' ? 'Saving…' : fb.connected ? 'Replace key' : 'Connect Firebase'}</button>
+            <label className="ad-btn ghost" style={{ cursor: 'pointer' }}>Choose file…<input type="file" accept="application/json,.json" onChange={readFile} hidden /></label>
+          </div>
+        </>}
+        {fb.connected && <div style={{ marginTop: 12 }}>
+          <button className="ad-btn" disabled={busy === 'fbtest'} onClick={testFb}>{busy === 'fbtest' ? 'Testing…' : 'Test connection'}</button>
+          {fbTest && (fbTest.ok ? <p style={{ marginTop: 8 }}><Badge kind="ok">Working</Badge> Google accepted the key for project {fbTest.projectId}. Nothing was sent.</p> : <p style={{ marginTop: 8 }}><Badge kind="warn">Not working</Badge> {fbTest.error}</p>)}
+        </div>}
+        <p className="ad-muted" style={{ marginTop: 10 }}>The key is stored on your server and never shown again. Treat it like a password: don’t share it in chats or commit it to code.</p>
       </section>
 
       <section className="ad-panel">

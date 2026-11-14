@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword, sign, memberId } from '../lib/auth.js';
 import { corsHeaders, gate } from '../lib/apiGate.js';
 import { markdownToHtml } from '../lib/markdown.js';
 import { listShows, listVideos } from '../lib/shows.js';
+import * as push from '../lib/push.js';
 
 const VERSION = '1.0.0';
 const LIVE = "status = 'published' AND (published_at IS NULL OR published_at <= ?)";
@@ -158,6 +159,11 @@ export const ENDPOINTS = [
     h: async (c) => { const p = await one("SELECT slug, title, tree, settings, updated_at FROM m1313_pages WHERE slug = ? AND status = 'published'", [c.params.slug]); if (!p) throw bad('not_found', 'Page not found.', 404); return ok(c, { slug: p.slug, title: p.title, updated_at: p.updated_at, url: `${c.o}/${p.slug === 'home' ? '' : p.slug}`, settings: JSON.parse(p.settings || '{}'), layout: JSON.parse(p.tree || '{"sections":[]}') }, {}, 120); } },
 
   /* ---- forms ---- */
+  { m: 'GET', p: '/api/v1/push/topics', tag: 'Notifications', summary: 'Notification topics', desc: 'The topics a user can subscribe to. Use the `id` values when registering a device.', h: async (c) => ok(c, push.TOPICS, {}, 300) },
+  { m: 'POST', p: '/api/v1/push/devices', tag: 'Notifications', summary: 'Register a device for push notifications', desc: 'Send the Firebase Cloud Messaging (FCM) registration token the app received, the platform and the topics the user wants. Call it again with the same token to change topics. Notifications are sent through Firebase to Android and iOS.', body: { token: 'fcm-registration-token…', platform: 'android', topics: ['breaking', 'news'] },
+    h: async (c) => { const b = await readJson(c.req); try { return reply(c, 200, { data: { registered: true, topics: await push.registerDevice(b.token, b.platform, b.topics) } }); } catch (e) { throw bad('invalid_parameter', e.message); } } },
+  { m: 'DELETE', p: '/api/v1/push/devices', tag: 'Notifications', summary: 'Unregister a device', desc: 'Stop notifications for this device (send the same FCM token as `token` in the body).', body: { token: 'fcm-registration-token…' },
+    h: async (c) => { await push.removeDevice((await readJson(c.req)).token); return reply(c, 200, { data: { unregistered: true } }); } },
   { m: 'POST', p: '/api/v1/newsletter', tag: 'Forms', summary: 'Subscribe to the newsletter', body: { email: 'reader@example.com' },
     h: async (c) => { const b = await readJson(c.req); const email = str(b.email, 255).toLowerCase(); if (!isEmail(email)) throw bad('invalid_parameter', 'A valid email is required.'); if (!(await one('SELECT id FROM m1313_newsletter WHERE email = ?', [email]))) await run('INSERT INTO m1313_newsletter (id, email, source, created_at) VALUES (?, ?, ?, ?)', [uuid(), email, 'api', now()]); return reply(c, 200, { data: { subscribed: true } }); } },
   { m: 'POST', p: '/api/v1/contact', tag: 'Forms', summary: 'Send a message to the newsroom', body: { name: 'Sam', email: 'sam@example.com', topic: 'News tip', message: 'A story idea…' },

@@ -8,6 +8,7 @@ import { getCode, saveCode } from '../lib/inject.js';
 import * as shows from '../lib/shows.js';
 import { getAds, saveAds } from '../lib/ads.js';
 import * as push from '../lib/push.js';
+import * as fcm from '../lib/fcm.js';
 import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
@@ -178,8 +179,12 @@ export function adminRoutes(r) {
     put(`/api/admin/${kind}/:id`, async (c) => { const b = await readJson(c.req); try { await save(c.params.id, b); await log(c, `updated a ${word}`, str(b.title, 120)); ok(c.res, { items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
     del(`/api/admin/${kind}/:id`, async (c) => { await shows.delRow(kind, c.params.id); await log(c, `deleted a ${word}`, c.params.id); ok(c.res, { items: await list({ all: true }) }); });
   }
-  get('/api/admin/push', async (c) => ok(c.res, { settings: await push.getPush(), stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }), 'admin');
-  put('/api/admin/push', async (c) => { const s = await push.savePush(await readJson(c.req)); await log(c, s.enabled ? 'updated notification settings (on)' : 'updated notification settings (off)', ''); ok(c.res, { settings: s, stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }); }, 'admin');
+  get('/api/admin/push/firebase', async (c) => ok(c.res, await fcm.status()), 'admin');
+  put('/api/admin/push/firebase', async (c) => { try { const r = await fcm.saveAccount((await readJson(c.req)).json); await log(c, 'saved the Firebase service-account key', r.projectId); ok(c.res, await fcm.status()); } catch (e) { fail(c.res, e.status || 500, e.message); } }, 'admin');
+  del('/api/admin/push/firebase', async (c) => { await fcm.removeAccount(); await log(c, 'removed the Firebase service-account key', ''); ok(c.res, await fcm.status()); }, 'admin');
+  post('/api/admin/push/firebase/test', async (c) => { try { ok(c.res, await fcm.test()); } catch (e) { send(c.res, 200, { ok: false, error: e.message }); } }, 'admin');
+  get('/api/admin/push', async (c) => ok(c.res, { firebase: await fcm.status(), settings: await push.getPush(), stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }), 'admin');
+  put('/api/admin/push', async (c) => { const s = await push.savePush(await readJson(c.req)); await log(c, s.enabled ? 'updated notification settings (on)' : 'updated notification settings (off)', ''); ok(c.res, { firebase: await fcm.status(), settings: s, stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }); }, 'admin');
   post('/api/admin/push/send', async (c) => {
     const b = await readJson(c.req); const topic = ['all', 'test', ...push.TOPICS.map((t) => t.id)].includes(b.topic) ? b.topic : 'all';
     try { const r = await push.sendToTopic(topic, { title: b.title, body: b.body, url: b.url }, 'manual'); await log(c, 'sent a push notification', `${str(b.title, 100)} → ${r.sent}`); ok(c.res, r); } catch (e) { fail(c.res, e.status || 500, e.message); }

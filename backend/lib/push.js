@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { sendNotification, generateVAPIDKeys } from 'web-push';
 import { all, one, run, uuid, now, getSetting, setSetting } from './db.js';
+import * as fcm from './fcm.js';
 
 // What visitors can choose to receive, and what the admin can switch on or off.
 export const TOPICS = [
@@ -54,10 +55,22 @@ export async function subscribe(sub, topics, agent = '') {
 export const unsubscribe = (endpoint) => run('DELETE FROM m1313_push_subs WHERE endpoint_hash = ?', [hash(String(endpoint || ''))]);
 export async function topicsFor(endpoint) { const r = await one('SELECT topics FROM m1313_push_subs WHERE endpoint_hash = ?', [hash(String(endpoint || ''))]); return r ? r.topics.split(',') : null; }
 
+// ---- mobile app devices (Firebase Cloud Messaging tokens) ----
+export async function registerDevice(token, platform, topics) {
+  token = String(token || '').trim(); if (token.length < 20 || token.length > 4096 || /\s/.test(token)) throw Object.assign(new Error('token must be the device’s Firebase (FCM) registration token.'), { status: 400 });
+  const pf = ['android', 'ios', 'web'].includes(String(platform).toLowerCase()) ? String(platform).toLowerCase() : 'android';
+  const tp = cleanTopics(topics).filter((x) => x !== 'test').join(',') || 'breaking,news'; const h = hash(token);
+  if (await one('SELECT id FROM m1313_push_devices WHERE token_hash = ?', [h])) await run('UPDATE m1313_push_devices SET topics = ?, platform = ?, fails = 0 WHERE token_hash = ?', [tp, pf, h]);
+  else await run('INSERT INTO m1313_push_devices (id, token_hash, token, platform, topics, created_at) VALUES (?,?,?,?,?,?)', [uuid(), h, token, pf, tp, now()]);
+  return tp.split(',');
+}
+export const removeDevice = (token) => run('DELETE FROM m1313_push_devices WHERE token_hash = ?', [hash(String(token || '').trim())]);
+
 export async function stats() {
-  const rows = await all('SELECT topics FROM m1313_push_subs'); const per = {};
-  for (const r of rows) for (const t of r.topics.split(',')) per[t] = (per[t] || 0) + 1;
-  return { total: rows.length, perTopic: per };
+  const rows = await all('SELECT topics FROM m1313_push_subs'); const dev = await all('SELECT topics, platform FROM m1313_push_devices'); const per = {};
+  for (const r of [...rows, ...dev]) for (const t of r.topics.split(',')) per[t] = (per[t] || 0) + 1;
+  const platforms = {}; for (const d of dev) platforms[d.platform] = (platforms[d.platform] || 0) + 1;
+  return { total: rows.length + dev.length, web: rows.length, devices: dev.length, platforms, perTopic: per };
 }
 export const recentLog = (n = 30) => all(`SELECT * FROM m1313_push_log ORDER BY created_at DESC LIMIT ${Number(n) || 30}`);
 
@@ -83,8 +96,23 @@ export async function sendToTopic(topic, { title, body = '', url = '/', image = 
       }
     }));
   }
+  // mobile apps (Firebase Cloud Messaging)
+  let audience = targets.length; const acc = await fcm.getAccount();
+  if (acc) {
+    const devs = (await all('SELECT * FROM m1313_push_devices')).filter((r) => { const t = r.topics.split(','); return topic === 'all' ? true : t.includes(topic); });
+    audience += devs.length;
+    for (let i = 0; i < devs.length; i += 20) {
+      await Promise.all(devs.slice(i, i + 20).map(async (r) => {
+        try {
+          const res = await fcm.sendTo(acc, r.token, { title, body, url, image, topic, urgent: topic === 'breaking' });
+          if (res.ok) { sent++; await run('UPDATE m1313_push_devices SET last_ok = ?, fails = 0 WHERE id = ?', [now(), r.id]); }
+          else { failed++; if (res.invalid) await run('DELETE FROM m1313_push_devices WHERE id = ?', [r.id]); else await run('UPDATE m1313_push_devices SET fails = fails + 1 WHERE id = ?', [r.id]); }
+        } catch { failed++; }
+      }));
+    }
+  }
   await run('INSERT INTO m1313_push_log (id, created_at, source, topic, title, body, url, sent, failed) VALUES (?,?,?,?,?,?,?,?,?)', [uuid(), now(), source, topic, title, body, url, sent, failed]);
-  return { sent, failed, audience: targets.length };
+  return { sent, failed, audience };
 }
 
 // ---- automatic triggers (never throw into the caller) ----
