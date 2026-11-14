@@ -1,11 +1,12 @@
 import { all, one, run, uuid, now, getContent } from '../lib/db.js';
-import { ok, fail, send, readJson, str, isEmail } from '../lib/http.js';
+import { ok, fail, send, readJson, str, isEmail, clientIp } from '../lib/http.js';
 import { hashPassword, verifyPassword, sign, memberId } from '../lib/auth.js';
 import { listPublished, getPublished, homeFeed } from '../lib/articles.js';
 import { tick as autoblogTick } from '../lib/autoblog.js';
 import { publicCode } from '../lib/inject.js';
 import { listShows, listVideos } from '../lib/shows.js';
 import { getAds } from '../lib/ads.js';
+import * as push from '../lib/push.js';
 
 const cache = { 'Cache-Control': 'public, max-age=20' };
 
@@ -15,6 +16,16 @@ export function publicRoutes(r) {
   r.get('/api/home', async (c) => send(c.res, 200, await homeFeed(), cache));
   r.get('/api/shows', async (c) => send(c.res, 200, { shows: await listShows() }, { 'Cache-Control': 'no-cache' }));
   r.get('/api/videos', async (c) => send(c.res, 200, { videos: await listVideos() }, { 'Cache-Control': 'no-cache' }));
+  // ---- push notifications (visitors) ----
+  const hits = new Map();
+  const tooMany = (c) => { const k = clientIp(c.req); const n = (hits.get(k) || 0) + 1; hits.set(k, n); if (hits.size > 5000) hits.clear(); setTimeout(() => { const v = hits.get(k); if (v <= 1) hits.delete(k); else hits.set(k, v - 1); }, 60e3).unref?.(); if (n > 20) { fail(c.res, 429, 'Too many requests. Try again in a minute.'); return true; } return false; };
+  r.get('/api/push/config', async (c) => { const cfg = await push.getPush(); send(c.res, 200, { enabled: cfg.enabled, publicKey: cfg.enabled ? await push.publicKey() : null, topics: push.TOPICS }, { 'Cache-Control': 'no-store' }); });
+  r.post('/api/push/subscribe', async (c) => {
+    if (tooMany(c)) return; const cfg = await push.getPush(); if (!cfg.enabled) return fail(c.res, 400, 'Notifications are not switched on yet.');
+    const b = await readJson(c.req); try { ok(c.res, { topics: await push.subscribe(b.subscription, b.topics, c.req.headers['user-agent']) }); } catch (e) { fail(c.res, e.status || 500, e.message); }
+  });
+  r.post('/api/push/topics', async (c) => { if (tooMany(c)) return; const b = await readJson(c.req); ok(c.res, { topics: await push.topicsFor(b.endpoint) }); });
+  r.post('/api/push/unsubscribe', async (c) => { if (tooMany(c)) return; await push.unsubscribe((await readJson(c.req)).endpoint); ok(c.res); });
   r.get('/api/site-code', async (c) => send(c.res, 200, { ...(await publicCode()), ads: await getAds() }, { 'Cache-Control': 'no-store' }));
   r.get('/api/articles', async (c) => {
     const q = c.query; const limit = Math.min(Number(q.get('limit')) || 50, 200);

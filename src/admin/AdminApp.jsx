@@ -9,6 +9,7 @@ const LiveEditor = lazy(() => import('./LiveEditor.jsx'));
 const PageBuilder = lazy(() => import('./PageBuilder.jsx'));
 const PagesList = lazy(() => import('./PagesList.jsx'));
 const AutoBlog = lazy(() => import('./AutoBlog.jsx'));
+const Notifications = lazy(() => import('./Notifications.jsx'));
 const CodeInjection = lazy(() => import('./CodeInjection.jsx'));
 const ShowsManager = lazy(() => import('./ShowsVideos.jsx').then((m) => ({ default: m.ShowsManager })));
 const VideosManager = lazy(() => import('./ShowsVideos.jsx').then((m) => ({ default: m.VideosManager })));
@@ -21,6 +22,7 @@ const NAV = [
   ['/admin/pages', 'Pages', 'M5 3h10l4 4v14H5zM14 3v5h5M9 13h6M9 17h6'],
   ['/admin/articles', 'Articles', 'M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM8 9h8M8 13h8M8 17h4'],
   ['/admin/autoblog', 'AI blog', 'M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9zM5 15l.7 1.6L7.5 17l-1.8.7L5 19.5l-.7-1.8L2.5 17l1.8-.4z', false, null, 'admin'],
+  ['/admin/notifications', 'Notifications', 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0', false, null, 'admin'],
   ['/admin/code', 'Code injection', 'M8 9l-4 3 4 3M16 9l4 3-4 3M13 6l-2 12', false, null, 'admin'],
   ['/admin/api', 'Public API', 'M8 9l-4 3 4 3M16 9l4 3-4 3M14 5l-4 14', false, null, 'admin'],
   ['/admin/content', 'Site content', 'M3 5h18v6H3zM3 15h8v4H3zM15 15h6v4h-6z'],
@@ -110,6 +112,7 @@ function Shell() {
         <Route element={<Layout admin={admin} onOut={out} />}>
           <Route path="pages" element={<Suspense fallback={null}><PagesList /></Suspense>} />
           <Route path="api" element={admin.role === 'admin' ? <Suspense fallback={null}><PublicApi /></Suspense> : <Navigate to="/admin" replace />} />
+          <Route path="notifications" element={admin.role === 'admin' ? <Suspense fallback={null}><Notifications /></Suspense> : <Navigate to="/admin" replace />} />
           <Route path="code" element={admin.role === 'admin' ? <Suspense fallback={null}><CodeInjection /></Suspense> : <Navigate to="/admin" replace />} />
           <Route path="autoblog" element={admin.role === 'admin' ? <Suspense fallback={null}><AutoBlog /></Suspense> : <Navigate to="/admin" replace />} />
           <Route index element={<Dashboard admin={admin} />} />

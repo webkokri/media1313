@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Logo, PlayIcon, SearchIcon } from './ui.jsx';
 import { TODAY_LABEL } from '../data.js';
 import { useContent } from '../content.jsx';
+import PushBell from './PushBell.jsx';
 
 const CHROME_DEFAULT = { tvLive: '1313 TV live now', radioLive: '1313 Radio on air', utilityLinks: [{ label: 'Newsletters', to: '/#newsletter' }, { label: 'About', to: '/about' }, { label: 'Sign in', to: '/signin' }], liveButton: { label: 'Watch & Listen Live', to: '/live' }, footerTagline: 'TV, radio and news in one place.', legalLinks: [{ label: 'Privacy', to: '/' }, { label: 'Terms', to: '/' }, { label: 'Accessibility', to: '/' }], copyright: 'MEDIA 1313' };
 
@@ -47,6 +48,7 @@ export default function Header() {
             ))}
           </nav>
           <div className="header-actions">
+            <PushBell />
             <button type="button" className="icon-btn header-search" aria-label="Search"><SearchIcon color="#111216" /></button>
             <Link to={chrome.liveButton.to} className="btn btn--red header-live"><PlayIcon />{chrome.liveButton.label}</Link>
             <button type="button" className={`burger ${open ? 'on' : ''}`} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen(!open)}>

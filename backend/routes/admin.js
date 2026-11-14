@@ -7,6 +7,7 @@ import * as autoblog from '../lib/autoblog.js';
 import { getCode, saveCode } from '../lib/inject.js';
 import * as shows from '../lib/shows.js';
 import { getAds, saveAds } from '../lib/ads.js';
+import * as push from '../lib/push.js';
 import * as apiGate from '../lib/apiGate.js';
 import { setSetting, delSetting } from '../lib/db.js';
 
@@ -40,6 +41,11 @@ export function adminRoutes(r) {
   const get = (p, h, role) => r.get(p, A(h, role)), post = (p, h, role) => r.post(p, A(h, role)),
     put = (p, h, role) => r.put(p, A(h, role)), del = (p, h, role) => r.del(p, A(h, role));
   const log = (c, action, target) => logActivity(c.admin.email, action, target);
+
+  const newsCategories = async () => { const r = await one("SELECT content_value FROM m1313_content WHERE content_key = 'NEWS_CATEGORIES'"); try { return (JSON.parse(r.content_value) || []).filter((x) => x !== 'All'); } catch { return []; } };
+  const PLACEHOLDER_BREAKING = /^Breaking alert headline appears here/i;
+  const breakingOf = async () => { const r = await one("SELECT content_value FROM m1313_content WHERE content_key = 'SITE'"); try { return String(JSON.parse(r.content_value)?.breaking || ''); } catch { return ''; } };
+  const watchBreaking = async (before) => { const now_ = await breakingOf(); if (now_ && now_ !== before && !PLACEHOLDER_BREAKING.test(now_)) push.notifyBreaking(now_); };   // a changed breaking headline notifies subscribers
 
   get('/api/admin/me', (c) => ok(c.res, { admin: { id: c.admin.id, email: c.admin.email, name: c.admin.name, role: c.admin.role } }));
   put('/api/admin/me/password', async (c) => {
@@ -96,20 +102,23 @@ export function adminRoutes(r) {
     const key = c.params.key; const b = await readJson(c.req);
     if (!(await one('SELECT content_key FROM m1313_content WHERE content_key = ?', [key]))) return fail(c.res, 404, 'Unknown content block.');
     if (b.value === undefined) return fail(c.res, 400, 'Missing value.');
+    const before = key === 'SITE' && b.publish ? await breakingOf() : '';
     await setContent(key, b.value, { draft: !b.publish });
+    if (key === 'SITE' && b.publish) watchBreaking(before);
     await log(c, b.publish ? 'published content' : 'saved draft of', key); ok(c.res);
   });
   post('/api/admin/content/:key/publish', async (c) => {
     const row = await one('SELECT draft_value FROM m1313_content WHERE content_key = ?', [c.params.key]);
     if (!row?.draft_value) return fail(c.res, 400, 'There is no draft to publish.');
-    await setContent(c.params.key, JSON.parse(row.draft_value)); await log(c, 'published content', c.params.key); ok(c.res);
+    const before = c.params.key === 'SITE' ? await breakingOf() : '';
+    await setContent(c.params.key, JSON.parse(row.draft_value)); if (c.params.key === 'SITE') watchBreaking(before); await log(c, 'published content', c.params.key); ok(c.res);
   });
   del('/api/admin/content/:key/draft', async (c) => { await run('UPDATE m1313_content SET draft_value = NULL WHERE content_key = ?', [c.params.key]); await log(c, 'discarded draft of', c.params.key); ok(c.res); });
   post('/api/admin/content-publish', async (c) => { // publish several drafts at once (live editor)
     const keys = (await readJson(c.req)).keys; let n = 0;
     for (const key of Array.isArray(keys) ? keys : []) {
       const row = await one('SELECT draft_value FROM m1313_content WHERE content_key = ?', [String(key)]);
-      if (row?.draft_value) { await setContent(String(key), JSON.parse(row.draft_value)); n++; }
+      if (row?.draft_value) { const before = String(key) === 'SITE' ? await breakingOf() : ''; await setContent(String(key), JSON.parse(row.draft_value)); if (String(key) === 'SITE') watchBreaking(before); n++; }
     }
     await log(c, 'published content', `${n} block(s) from live editor`); ok(c.res, { published: n });
   });
@@ -164,11 +173,17 @@ export function adminRoutes(r) {
   for (const kind of ['shows', 'videos']) {
     const list = kind === 'shows' ? shows.listShows : shows.listVideos; const save = kind === 'shows' ? shows.saveShow : shows.saveVideo; const word = kind === 'shows' ? 'show' : 'video';
     get(`/api/admin/${kind}`, async (c) => ok(c.res, { items: await list({ all: true }) }));
-    post(`/api/admin/${kind}`, async (c) => { const b = await readJson(c.req); try { const id = await save(null, b); await log(c, `added a ${word}`, str(b.title, 120)); ok(c.res, { id, items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
+    post(`/api/admin/${kind}`, async (c) => { const b = await readJson(c.req); try { const id = await save(null, b); await log(c, `added a ${word}`, str(b.title, 120)); if (kind === 'videos' && b.active !== false) push.notifyVideo({ title: str(b.title, 200), show: str(b.show, 200), poster: b.poster }); ok(c.res, { id, items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
     put(`/api/admin/${kind}/order`, async (c) => { const b = await readJson(c.req); if (Array.isArray(b.ids)) await shows.reorder(kind, b.ids.slice(0, 500)); ok(c.res, { items: await list({ all: true }) }); });
     put(`/api/admin/${kind}/:id`, async (c) => { const b = await readJson(c.req); try { await save(c.params.id, b); await log(c, `updated a ${word}`, str(b.title, 120)); ok(c.res, { items: await list({ all: true }) }); } catch (e) { fail(c.res, e.status || 500, e.message); } });
     del(`/api/admin/${kind}/:id`, async (c) => { await shows.delRow(kind, c.params.id); await log(c, `deleted a ${word}`, c.params.id); ok(c.res, { items: await list({ all: true }) }); });
   }
+  get('/api/admin/push', async (c) => ok(c.res, { settings: await push.getPush(), stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }), 'admin');
+  put('/api/admin/push', async (c) => { const s = await push.savePush(await readJson(c.req)); await log(c, s.enabled ? 'updated notification settings (on)' : 'updated notification settings (off)', ''); ok(c.res, { settings: s, stats: await push.stats(), log: await push.recentLog(30), topics: push.TOPICS, categories: await newsCategories(), publicKey: await push.publicKey() }); }, 'admin');
+  post('/api/admin/push/send', async (c) => {
+    const b = await readJson(c.req); const topic = ['all', 'test', ...push.TOPICS.map((t) => t.id)].includes(b.topic) ? b.topic : 'all';
+    try { const r = await push.sendToTopic(topic, { title: b.title, body: b.body, url: b.url }, 'manual'); await log(c, 'sent a push notification', `${str(b.title, 100)} → ${r.sent}`); ok(c.res, r); } catch (e) { fail(c.res, e.status || 500, e.message); }
+  }, 'admin');
   get('/api/admin/ads', async (c) => ok(c.res, await getAds()), 'admin');
   put('/api/admin/ads', async (c) => { try { const a = await saveAds(await readJson(c.req)); await log(c, a.enabled ? 'updated ad slots (on)' : 'updated ad slots (off)', ''); ok(c.res, a); } catch (e) { fail(c.res, e.status || 500, e.message); } }, 'admin');
   get('/api/admin/code', async (c) => ok(c.res, await getCode()), 'admin');

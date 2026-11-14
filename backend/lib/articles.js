@@ -1,6 +1,7 @@
 // News articles live in m1313_articles. Editors manage them in /admin; the public site reads only published ones.
 import { all, one, run, uuid, now } from './db.js';
 import { slugify } from './http.js';
+import { notifyArticle } from './push.js';
 
 const words = (s) => (String(s || '').match(/\S+/g) || []).length;
 const parseTags = (v) => { try { const t = JSON.parse(v || '[]'); return Array.isArray(t) ? t : []; } catch { return []; } };
@@ -70,15 +71,18 @@ export async function adminSave(input, id) {
     if (!prev) throw Object.assign(new Error('Article not found'), { status: 404 });
     const publishedAt = status === 'published' ? (input.publishedAt || prev.published_at || t) : prev.published_at;
     await run('UPDATE m1313_articles SET slug=?, title=?, dek=?, category=?, tags=?, content=?, hero_image=?, status=?, author=?, published_at=?, updated_at=? WHERE id=?', [...fields, publishedAt, t, id]);
+    if (status === 'published' && prev.status !== 'published' && String(publishedAt) <= t) notifyArticle({ title, dek: input.dek, category: input.category, tags: JSON.parse(tags), slug, heroImage: input.heroImage });   // first time it goes live
     return id;
   }
   const newId = uuid();
   await run('INSERT INTO m1313_articles (id, slug, title, dek, category, tags, content, hero_image, status, author, published_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [newId, ...fields, status === 'published' ? (input.publishedAt || t) : null, t, t]);
+  if (status === 'published' && String(input.publishedAt || t) <= t) notifyArticle({ title, dek: input.dek, category: input.category, tags: JSON.parse(tags), slug, heroImage: input.heroImage });
   return newId;
 }
 export const adminDelete = (id) => run('DELETE FROM m1313_articles WHERE id = ?', [id]);
 export async function setStatus(id, status) {
-  const t = now();
+  const t = now(); const prev = await one('SELECT status, title, dek, category, tags, slug, hero_image FROM m1313_articles WHERE id = ?', [id]);
   await run('UPDATE m1313_articles SET status = ?, published_at = CASE WHEN ? = \'published\' AND published_at IS NULL THEN ? ELSE published_at END, updated_at = ? WHERE id = ?', [status, status, t, t, id]);
+  if (status === 'published' && prev && prev.status !== 'published') { let tg = []; try { tg = JSON.parse(prev.tags || '[]'); } catch { /* ignore */ } notifyArticle({ title: prev.title, dek: prev.dek, category: prev.category, tags: tg, slug: prev.slug, heroImage: prev.hero_image }); }
 }
